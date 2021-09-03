@@ -32,7 +32,7 @@ var latexMathParser = (function() {
     regex(/^[^\\a-eg-zA-Z]/) // hotfix #164; match MathBlock::write
     .or(string('\\').then(
       regex(/^[a-z]+/i)
-      .or(regex(/^\s+/).result(' '))
+      .or(regex(/^\s+|[;,]/).result(' '))  //mslob: added thin and large spaces
       .or(any)
     )).then(function(ctrlSeq) {
       var cmdKlass = LatexCmds[ctrlSeq];
