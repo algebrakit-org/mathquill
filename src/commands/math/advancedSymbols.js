@@ -256,7 +256,7 @@ LatexCmds.rbrack = bind(VanillaSymbol, ']');
 
 //various symbols
 LatexCmds.slash = bind(VanillaSymbol, '/');
-LatexCmds.vert = bind(VanillaSymbol,'|');
+LatexCmds.vert = bind(VanillaSymbol, '\\vert', '|');
 LatexCmds.perp = LatexCmds.perpendicular = bind(VanillaSymbol,'\\perp ','&perp;');
 LatexCmds.nperp = LatexCmds.notperpendicular = bind(VanillaSymbol, '\\not\\perp', '&perp;\u0338');
 LatexCmds.nabla = LatexCmds.del = bind(VanillaSymbol,'\\nabla ','&nabla;');
