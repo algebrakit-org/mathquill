@@ -513,6 +513,54 @@ LatexCmds['∫'] =
     _.createLeftOf = MathCommand.p.createLeftOf;
   });
 
+var LimitTo =       // AlgebraKiT, mslob: our own implementation of limit
+LatexCmds.limto = P(MathCommand, function(_, super_) {
+  _.ctrlSeq = '\\limto';
+  _.htmlTemplate =
+      '<span class="mq-stack-operator mq-non-leaf">'
+    +   '<span class="mq-operator-name">lim</span>'
++       '<span class="mq-from">'
++            '<span class="mq-non-leaf">&0</span>'
++            '<span class="mq-non-leaf">&rarr;</span>'
++            '<span class="mq-non-leaf">&1</span>'
++       '</span>'
+    + '</span>'
+  ;
+
+  _.parser = function() {
+    return latexMathParser.optBlock
+    .then(function(block1, block2) {
+      
+      return latexMathParser.block.map(function(block) {
+        var limit = LimitTo();
+        limit.blocks = [ block1, block2];
+        block1.adopt(limit, 0, block2);
+        block2.adopt(limit, block1, 0);
+        return limit;
+      });
+    })
+    .or(super_.parser.call(this));
+  };
+  _.textTemplate = ['limto[', '->',']'];
+  _.latex = function() {
+    if(MathQuill.latexSyntax=='STANDARD') {
+      return '\\lim_{'+this.blocks[0].latex()+'\\rightarrow'+this.blocks[1].latex()+'}';
+    } else {
+      return '\\limto{'+this.blocks[0].latex()+'}{'+this.blocks[1].latex()+'}';
+    }
+  };
+  // _.reflow = function() {
+  //   var argjQ = this.jQ.children('.mq-non-leaf').last();
+  //   var contentjQ = argjQ.children(':eq(1)');
+  //   var height = contentjQ.outerHeight()
+  //                / parseFloat(contentjQ.css('fontSize'));
+  //   var parens = argjQ.children('.mq-paren');
+  //   if (parens.length) {
+  //     scale(parens, min(1 + .2*(height - 1), 1.2), 1.2*height);
+  //   }
+  // }
+});
+
 var Fraction =
   LatexCmds.frac =
   LatexCmds.dfrac =
@@ -542,6 +590,7 @@ var LiveFraction =
         while (leftward &&
           !(
             leftward instanceof BinaryOperator ||
+            leftward instanceof LimitTo ||
             leftward instanceof (LatexCmds.text || noop) ||
             leftward instanceof SummationNotation ||
             leftward instanceof SummationSymbol ||

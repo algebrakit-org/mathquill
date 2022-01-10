@@ -98,8 +98,6 @@ LatexCmds.diff = P(VanillaSymbol, function(_, super_) {
 LatexCmds.langle = bind(VanillaSymbol,'\\langle ','&#9001;');
 LatexCmds.rangle = bind(VanillaSymbol,'\\rangle ','&#9002;');
 
-
-
 LatexCmds.PolarVectorNl = P(IntervalCommand, function(_, super_) {
   _.init = function() {
     super_.init.call(this, '\\PolarVectorNl', '(', ')', ';');
