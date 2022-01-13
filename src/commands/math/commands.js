@@ -544,7 +544,7 @@ LatexCmds.limto = P(MathCommand, function(_, super_) {
   _.textTemplate = ['limto[', '->',']'];
   _.latex = function() {
     if(MathQuill.latexSyntax=='STANDARD') {
-      return '\\lim_{'+this.blocks[0].latex()+'\\rightarrow'+this.blocks[1].latex()+'}';
+      return '\\lim_{'+this.blocks[0].latex()+'\\rightarrow '+this.blocks[1].latex()+'}';
     } else {
       return '\\limto{'+this.blocks[0].latex()+'}{'+this.blocks[1].latex()+'}';
     }
