@@ -507,7 +507,7 @@ var MathBlock = P(MathElement, function(_, super_) {
   };
   _.write = function(cursor, ch) {
     var cmd = this.handleAutoCommands(ch, cursor);
-    if(cmd && (ch==' ' || ch=='(') && cmd.numBlocks()>0) {
+    if(cmd && (ch==' ' || (ch=='(' && cmd.numBlocks()>0)  )) {
       //no need to render the space or opening bracket
     } else {
       cmd = this.chToCmd(ch, cursor.options);
