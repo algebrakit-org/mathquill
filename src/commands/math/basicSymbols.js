@@ -559,4 +559,8 @@ LatexCmds['×'] = LatexCmds.times = bind(BinaryOperator, '\\times ', '&times;', 
 LatexCmds['÷'] = LatexCmds.div = LatexCmds.divide = LatexCmds.divides =
   bind(BinaryOperator,'\\div ','&divide;', '[/]');
 
+// #6401 make ':' a BinaryOperator to correctly render spacing. Note that this
+// way of rendering should get overruled by the 'typingColonWritesDivisionSymbol'
+// option, applied in MathBlock _chToCmd function.
+CharCmds[':'] = bind(BinaryOperator, ':', ':', ':');
 CharCmds['~'] = LatexCmds.sim = bind(BinaryOperator, '\\sim ', '~', '~');
