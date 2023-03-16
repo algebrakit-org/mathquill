@@ -138,11 +138,13 @@ LatexCmds.NoSolutionNl = bind(AkitTextBlock, '\\NoSolutionNl', 'kan niet');
 LatexCmds.NoSolutionEn = bind(AkitTextBlock, '\\NoSolutionEn', 'no solution');
 LatexCmds.NoSolutionFr = bind(AkitTextBlock, '\\NoSolutionFr', 'aucun solution');
 LatexCmds.NoSolutionDe = bind(AkitTextBlock, '\\NoSolutionDe', 'kann nicht');
+LatexCmds.NoSolutionLt = bind(AkitTextBlock, '\\NoSolutionLt', 'sprendinių nėra');
 
 LatexCmds.TrueSolutionNl = bind(AkitTextBlock, '\\TrueSolutionNl', 'waar');
 LatexCmds.TrueSolutionEn = bind(AkitTextBlock, '\\TrueSolutionEn', 'true');
 LatexCmds.TrueSolutionFr = bind(AkitTextBlock, '\\TrueSolutionFr', 'vrai');
 LatexCmds.TrueSolutionDe = bind(AkitTextBlock, '\\TrueSolutionDe', 'wahr');
+LatexCmds.TrueSolutionLt = bind(AkitTextBlock, '\\TrueSolutionLt', 'teisingai');
 
 
 LatexCmds.SpaceVector = P(Matrix, function(_, super_) {
