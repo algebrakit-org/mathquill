@@ -219,6 +219,7 @@ LatexCmds.surd = bind(VanillaSymbol, '\\surd ', '&#8730;');
 LatexCmds.triangle = bind(VanillaSymbol, '\\triangle ', '&#9651;');
 LatexCmds.ell = bind(VanillaSymbol, '\\ell ', '&#8467;');
 LatexCmds.top = bind(VanillaSymbol, '\\top ', '&#8868;');
+LatexCmds.intercal = bind(VanillaSymbol, '\\intercal', '&#x22BA;')
 LatexCmds.flat = bind(VanillaSymbol, '\\flat ', '&#9837;');
 LatexCmds.natural = bind(VanillaSymbol, '\\natural ', '&#9838;');
 LatexCmds.sharp = bind(VanillaSymbol, '\\sharp ', '&#9839;');
