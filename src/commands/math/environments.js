@@ -480,10 +480,9 @@ var MatrixCell = P(MathBlock, function(_, super_) {
     case 'Shift-Spacebar':
       e.preventDefault();
       return this.parent.insert('addColumn', this);
-      break;
     case 'Shift-Enter':
-    return this.parent.insert('addRow', this);
-      break;
+      e.preventDefault();
+      return this.parent.insert('addRow', this);
     }
     return super_.keystroke.apply(this, arguments);
   };
