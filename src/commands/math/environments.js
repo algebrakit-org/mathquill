@@ -43,6 +43,7 @@ var Matrix =
             right: null
         };
         _.environment = 'matrix';
+        _.vlines = [];
 
         _.reflow = function () {
             var blockjQ = this.jQ.children('table');
@@ -55,7 +56,7 @@ var Matrix =
             }
         };
         _.latex = function () {
-            var latex = '';
+            var latex = this.vlines.map(line => `[${line}]`).join('');
             var row;
 
             this.eachChild(function (cell) {
@@ -135,11 +136,7 @@ var Matrix =
                                     vlines.push(vlineIndex);
                                 }
                                 self.vlines = vlines.filter((v, i, a) => a.indexOf(v) === i).sort();
-    
-                                console.log(self.vlines);
-                            } else {
-                                // No optional parameter found, continue silently with rest of parsing
-                            }
+                            } // else no optional parameter found, continue silently with rest of parsing
                             return Parser.succeed();
                         })
                 )

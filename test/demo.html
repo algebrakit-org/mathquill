@@ -94,6 +94,7 @@ $('#codecogs').click(function() {
 
 $(function() {
   var latexMath = MQ($('#editable-math')[0]);
+  window.mathfield = latexMath;
   $(latexMath.el()).bind('keydown keypress', function() {
     setTimeout(function() {
       var latex = latexMath.latex();
