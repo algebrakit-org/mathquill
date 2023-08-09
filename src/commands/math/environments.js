@@ -88,8 +88,16 @@ var Matrix =
                     trs += '<tr>$tds</tr>';
                     cells[row] = [];
                 }
-                cells[row].push('<td>&' + (i++) + '</td>');
+                cells[row].push('<td><div>&' + (i++) + '</div></td>');
             });
+
+            // Inject vertical lines in between cells
+            for(let vv = this.vlines.length - 1; vv >= 0; vv--) {
+                const vIndex = Math.max(0, Math.min(cells[0].length, this.vlines[vv]));
+                cells.forEach(cell => {
+                    cell.splice(vIndex, 0, '<td class="mq-matrix-vline"></td>');
+                });
+            }
 
             this.htmlTemplate =
                 '<span class="mq-matrix mq-non-leaf">'
