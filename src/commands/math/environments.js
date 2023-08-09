@@ -56,7 +56,9 @@ var Matrix =
             }
         };
         _.latex = function () {
-            var latex = this.vlines.map(line => `[${line}]`).join('');
+            var latex = this.vlines.map(function(line) {
+                return ['[',']'].join(line);
+            }).join('');
             var row;
 
             this.eachChild(function (cell) {
@@ -92,9 +94,9 @@ var Matrix =
             });
 
             // Inject vertical lines in between cells
-            for(let vv = this.vlines.length - 1; vv >= 0; vv--) {
-                const vIndex = Math.max(0, Math.min(cells[0].length, this.vlines[vv]));
-                cells.forEach(cell => {
+            for(var vv = this.vlines.length - 1; vv >= 0; vv--) {
+                var vIndex = Math.max(0, Math.min(cells[0].length, this.vlines[vv]));
+                cells.forEach(function(cell) {
                     cell.splice(vIndex, 0, '<td class="mq-matrix-vline"></td>');
                 });
             }
@@ -135,7 +137,7 @@ var Matrix =
                         .then(function (result) {
                             if (result.length > 0) {
                                 const vlines = [];
-                                for (let ii = 0; ii < result.length; ii++) {
+                                for (var ii = 0; ii < result.length; ii++) {
                                     const block = result[ii];
                                     const vlineIndex = parseInt(block.join('latex'));
                                     if (vlineIndex == undefined || isNaN(vlineIndex)) {
@@ -143,7 +145,9 @@ var Matrix =
                                     }
                                     vlines.push(vlineIndex);
                                 }
-                                self.vlines = vlines.filter((v, i, a) => a.indexOf(v) === i).sort();
+                                self.vlines = vlines.filter(function(v, i, a) {
+                                    return a.indexOf(v) === i;
+                                }).sort();
                             } // else no optional parameter found, continue silently with rest of parsing
                             return Parser.succeed();
                         })
