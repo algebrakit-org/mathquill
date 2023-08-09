@@ -500,3 +500,78 @@ var MatrixCell = P(MathBlock, function(_, super_) {
     else cursor.insDirOf(dir, this.parent);
   };
 });
+
+
+Environments.qmatrix = P(Matrix, function (_, super_) {
+    var delimiters = {
+        column: '&',
+        row: '\\\\'
+    };
+
+    _.environment = 'qmatrix';
+    _.parentheses = {
+        left: '(',
+        right: ')'
+    };
+    _.parser = function () {
+        var self = this;
+        var optWhitespace = Parser.optWhitespace;
+        var optMathBlock = latexMathParser.optBlock;
+        var string = Parser.string;
+
+        return optWhitespace
+            .then(
+                optMathBlock
+                    .many()
+                    .then(function (result) {
+                        if (result.length > 0) {
+                            const vlines = [];
+                            for (let ii = 0; ii < result.length; ii++) {
+                                const block = result[ii];
+                                const vlineIndex = parseInt(block.join('latex'));
+                                if (vlineIndex == undefined || isNaN(vlineIndex)) {
+                                    return Parser.fail('matrix optional argument must be integer');
+                                }
+                                vlines.push(vlineIndex);
+                            }
+                            self.vlines = vlines.filter((v, i, a) => a.indexOf(v) === i).sort();
+
+                            console.log(self.vlines);
+                        } else {
+                            // No optional parameter found, continue silently with rest of parsing
+                        }
+                        return Parser.succeed();
+                    })
+            )
+            .then(
+                optWhitespace
+                    .then(string(delimiters.column)
+                        .or(string(delimiters.row))
+                        .or(latexMathParser.block))
+                    .many()
+                    .skip(optWhitespace)
+                    .then(function (items) {
+                        var blocks = [];
+                        var row = 0;
+                        self.blocks = [];
+
+                        function addCell() {
+                            self.blocks.push(MatrixCell(row, self, blocks));
+                            blocks = [];
+                        }
+
+                        for (var i = 0; i < items.length; i += 1) {
+                            if (items[i] instanceof MathBlock) {
+                                blocks.push(items[i]);
+                            } else {
+                                addCell();
+                                if (items[i] === delimiters.row) row += 1;
+                            }
+                        }
+                        addCell();
+                        self.autocorrect();
+                        return Parser.succeed(self);
+                    })
+            )
+    };
+});
