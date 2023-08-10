@@ -43,6 +43,8 @@ var Matrix =
             right: null
         };
         _.environment = 'matrix';
+
+        // Ensure this is in reverse-column order (so [4, 2, 1])
         _.vlines = [];
 
         _.reflow = function () {
@@ -94,12 +96,12 @@ var Matrix =
             });
 
             // Inject vertical lines in between cells
-            for(var vv = this.vlines.length - 1; vv >= 0; vv--) {
-                var vIndex = Math.max(0, Math.min(cells[0].length, this.vlines[vv]));
+            this.vlines.forEach(function(vIndex) {
+                var _vIndex = Math.max(0, Math.min(cells[0].length, vIndex));
                 cells.forEach(function(cell) {
-                    cell.splice(vIndex, 0, '<td class="mq-matrix-vline"></td>');
+                    cell.splice(_vIndex, 0, '<td class="mq-matrix-vline"></td>');
                 });
-            }
+            });
 
             this.htmlTemplate =
                 '<span class="mq-matrix mq-non-leaf">'
@@ -147,7 +149,7 @@ var Matrix =
                                 }
                                 self.vlines = vlines.filter(function(v, i, a) {
                                     return a.indexOf(v) === i;
-                                }).sort();
+                                }).sort().reverse();
                             } // else no optional parameter found, continue silently with rest of parsing
                             return Parser.succeed();
                         })
@@ -353,6 +355,7 @@ var Matrix =
             var previous = [], newCells = [], next = [];
             var newRow = jQuery('<tr></tr>'), row = afterCell.row;
             var columns = 0, block, column;
+            var newTd, newVline;
 
             this.eachChild(function (cell) {
                 // Cache previous rows
@@ -371,18 +374,42 @@ var Matrix =
                 }
             });
 
+            // Treat first possible vline (before any cells) as special case
+            if (this.vlines.includes(0)) {
+                jQuery('<td class="mq-matrix-vline"></td>')
+                .appendTo(newRow);
+            }
+
             // Add new cells, one for each column
             for (var i = 0; i < columns; i += 1) {
+                // Add cell routine
                 block = MatrixCell(row + 1);
                 block.parent = this;
                 newCells.push(block);
 
+                newTd = jQuery('<td></td>');
                 // Create cell <td>s and add to new row
-                block.jQ = jQuery('<td class="mq-empty">')
+                block.jQ = jQuery('<div class="mq-empty">')
                     .attr(mqBlockId, block.id)
-                    .appendTo(newRow);
+                    .appendTo(newTd);
+                
+                newTd.appendTo(newRow);
+
+                // Add vline (if needed)
+                if (this.vlines.includes(i + 1)) {
+                    jQuery('<td class="mq-matrix-vline"></td>')
+                        .appendTo(newRow);
+                }
             }
 
+            // Inject vlines into new row
+            this.vlines.forEach(function(vIndex) {
+                newVline = jQuery('<td class="mq-matrix-vline"></td>');
+                
+                // jquery magic, insert in right place
+
+            });
+                
             // Insert the new row
             this.jQ.find('tr').eq(row).after(newRow);
             this.blocks = previous.concat(newCells, next);
