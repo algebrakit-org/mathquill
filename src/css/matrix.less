@@ -37,6 +37,15 @@
             width: 0;
             padding: 0;
             border-right: 1px solid black;
+
+            // should be within two 'regular' td matrix cells, so should always 
+            // get a padding-left. Additional offset of 3px, so it aligns with 
+            // the '& .td' 6px (3px + 3px) padding.
+            padding-left: 3px;
+
+            & + td {
+                padding-left: 6px;
+            }
           }
         }
       }

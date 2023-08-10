@@ -505,6 +505,34 @@ var Matrix =
             this.blocks = [].concat.apply([], rows);
             return newCells[afterCell.row];
         };
+        _.addVline = function(afterCell) {
+            var rows = [];
+            var column;
+
+            // Build rows array and find column index
+            this.eachChild(function (cell) {
+                rows[cell.row] = rows[cell.row] || [];
+                rows[cell.row].push(cell);
+                if (cell === afterCell) column = rows[cell.row].length;
+            });
+
+            if (column >= 0 
+                && column < rows[afterCell.row].length
+                && this.vlines.indexOf(column) < 0
+            ) {
+                this.vlines.push(column);
+                this.vlines.sort().reverse();
+
+                this.jQ.find('tr').each(function(_, obj) {
+                    jQuery(obj)
+                        .find('td:not(.mq-matrix-vline)')
+                        .eq(column - 1)
+                        .after(jQuery('<td class="mq-matrix-vline"></td>'));
+                });
+            }
+
+            return afterCell;
+        }
         _.insert = function (method, afterCell) {
             var cellToFocus = this[method](afterCell);
             this.cursor = this.cursor || this.parent.cursor;
@@ -599,6 +627,9 @@ var MatrixCell = P(MathBlock, function (_, super_) {
     };
     _.keystroke = function (key, e, ctrlr) {
         switch (key) {
+            case 'Ctrl-Alt-Spacebar':
+                e.preventDefault();
+                return this.parent.insert('addVline', this);
             case 'Shift-Spacebar':
                 e.preventDefault();
                 return this.parent.insert('addColumn', this);
