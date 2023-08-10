@@ -293,7 +293,37 @@ var Matrix =
                 }
                 this.relink();
             }
+
+            // Correct vlines that are not supported
+            this.vlines = this.vlines.filter(function(v) {
+                return v > 0 && v < maxLength;
+            });
         };
+        _.correctVlines = function() {
+            // Assume lengths of each row are consistent
+            // So retrieve number of columns from first row
+            var blocks = this.blocks;
+            var self = this;
+            
+            for (var i = 0; i < blocks.length; i += 1) {
+                if (blocks[i].row > 0) break;
+            }
+            var nCols = i;
+
+            var removeIndices = self.vlines.filter(function(v, i, a) {
+                return v === 0 || v === nCols || a.indexOf(v) != i;
+            }).map(function(v) {return self.vlines.indexOf(v)});
+
+            removeIndices.forEach(function(index) {
+                self.jQ.find('tr').each(function(_, obj) {
+                    jQuery(obj).find('td.mq-matrix-vline').eq(index).remove();
+                });
+            });
+            removeIndices.reverse().forEach(function(index) {
+                self.vlines.splice(index, 1);
+            });
+            
+        }
         // Deleting a cell will also delete the current row and
         // column if they are empty, and relink the matrix.
         _.deleteCell = function (currentCell) {
@@ -358,19 +388,13 @@ var Matrix =
                         break;
                     }
                 }
-
-                // Check for duplicates and, if so, remove them
-                if (this.vlines.filter(function (v) {return v === colIndex;}).length > 1) {
-                    // Loop over each row and remove the <td> at indexOf colIndex
-                    const removeIndex = this.vlines.indexOf(colIndex);
-                    this.jQ.find('tr').each(function(_, obj) {
-                        jQuery(obj).find('td.mq-matrix-vline').eq(removeIndex).remove();
-                    });
-                    this.vlines.splice(removeIndex, 1);
-                }
-
+                
                 // Then remove column
                 remove(myColumn);
+
+                // Check for invalidated vlines (duplicates and edge lines) and
+                // remove them.
+                this.correctVlines();
             }
             this.finalizeTree();
         };
