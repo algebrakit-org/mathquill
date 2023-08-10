@@ -315,8 +315,9 @@ var Matrix =
             }).map(function(v) {return self.vlines.indexOf(v)});
 
             removeIndices.forEach(function(index) {
+                const removeIndex = self.vlines.length - 1 - index;
                 self.jQ.find('tr').each(function(_, obj) {
-                    jQuery(obj).find('td.mq-matrix-vline').eq(index).remove();
+                    jQuery(obj).find('td.mq-matrix-vline').eq(removeIndex).remove();
                 });
             });
             removeIndices.reverse().forEach(function(index) {
@@ -505,9 +506,10 @@ var Matrix =
             this.blocks = [].concat.apply([], rows);
             return newCells[afterCell.row];
         };
-        _.addVline = function(afterCell) {
+        _.toggleVline = function(afterCell) {
             var rows = [];
             var column;
+            var returnCell = afterCell;
 
             // Build rows array and find column index
             this.eachChild(function (cell) {
@@ -516,8 +518,18 @@ var Matrix =
                 if (cell === afterCell) column = rows[cell.row].length;
             });
 
+            var nCols = rows[afterCell.row].length;
+
+            if (column === nCols) {
+                // If in the final column of the matrix, first add column to be 
+                // able to put vline in between.
+
+                returnCell = this.addColumn(afterCell);
+                nCols++;
+            }
+
             if (column >= 0 
-                && column < rows[afterCell.row].length
+                && column < nCols
                 && this.vlines.indexOf(column) < 0
             ) {
                 this.vlines.push(column);
@@ -531,9 +543,9 @@ var Matrix =
                 });
             }
 
-            return afterCell;
+            return returnCell;
         }
-        _.insert = function (method, afterCell) {
+        _.modify = function (method, afterCell) {
             var cellToFocus = this[method](afterCell);
             this.cursor = this.cursor || this.parent.cursor;
             this.finalizeTree();
@@ -629,13 +641,13 @@ var MatrixCell = P(MathBlock, function (_, super_) {
         switch (key) {
             case 'Ctrl-Alt-Spacebar':
                 e.preventDefault();
-                return this.parent.insert('addVline', this);
+                return this.parent.modify('toggleVline', this);
             case 'Shift-Spacebar':
                 e.preventDefault();
-                return this.parent.insert('addColumn', this);
+                return this.parent.modify('addColumn', this);
             case 'Shift-Enter':
                 e.preventDefault();
-                return this.parent.insert('addRow', this);
+                return this.parent.modify('addRow', this);
         }
         return super_.keystroke.apply(this, arguments);
     };
