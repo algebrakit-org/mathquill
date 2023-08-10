@@ -310,20 +310,36 @@ var Matrix =
             }
             var nCols = i;
 
-            var removeIndices = self.vlines.filter(function(v, i, a) {
+            this.vlines.filter(function(v, i, a) {
                 return v === 0 || v === nCols || a.indexOf(v) != i;
-            }).map(function(v) {return self.vlines.indexOf(v)});
+            }).forEach(function(colIndex) {
+                self.deleteVline(colIndex);
+            });
+        }
+        _.addVline = function(colIndex) {
+            pray("the vline shouldn't already exist at index", this.vlines.indexOf(colIndex < 0));
 
-            removeIndices.forEach(function(index) {
-                const removeIndex = self.vlines.length - 1 - index;
-                self.jQ.find('tr').each(function(_, obj) {
-                    jQuery(obj).find('td.mq-matrix-vline').eq(removeIndex).remove();
-                });
+            this.vlines.push(colIndex);
+            this.vlines.sort().reverse();
+
+            this.jQ.find('tr').each(function(_, obj) {
+                jQuery(obj)
+                    .find('td:not(.mq-matrix-vline)')
+                    .eq(colIndex - 1)
+                    .after(jQuery('<td class="mq-matrix-vline"></td>'));
             });
-            removeIndices.reverse().forEach(function(index) {
-                self.vlines.splice(index, 1);
-            });
+        }
+        _.deleteVline = function(colIndex) {
+            var self = this;
+            var vIndex = this.vlines.indexOf(colIndex);
+
+            pray("there should be a vline to remove at index", vIndex > -1);
             
+            this.jQ.find('tr').each(function(_, obj) {
+                const removeIndex = self.vlines.length - 1 - vIndex;
+                jQuery(obj).find('td.mq-matrix-vline').eq(removeIndex).remove();
+            });
+            this.vlines.splice(vIndex, 1);
         }
         // Deleting a cell will also delete the current row and
         // column if they are empty, and relink the matrix.
@@ -520,27 +536,25 @@ var Matrix =
 
             var nCols = rows[afterCell.row].length;
 
+            // If in the final column of the matrix, first add column to be 
+            // able to put vline in between.
             if (column === nCols) {
-                // If in the final column of the matrix, first add column to be 
-                // able to put vline in between.
-
                 returnCell = this.addColumn(afterCell);
                 nCols++;
             }
-
+            
             if (column >= 0 
                 && column < nCols
-                && this.vlines.indexOf(column) < 0
+                // && this.vlines.indexOf(column) < 0
             ) {
-                this.vlines.push(column);
-                this.vlines.sort().reverse();
-
-                this.jQ.find('tr').each(function(_, obj) {
-                    jQuery(obj)
-                        .find('td:not(.mq-matrix-vline)')
-                        .eq(column - 1)
-                        .after(jQuery('<td class="mq-matrix-vline"></td>'));
-                });
+                const vIndex = this.vlines.indexOf(column);
+                if (vIndex < 0) {
+                    // toggle on
+                    this.addVline(column);
+                } else {
+                    // toggle off
+                    this.deleteVline(this.vlines[vIndex]);
+                }
             }
 
             return returnCell;
