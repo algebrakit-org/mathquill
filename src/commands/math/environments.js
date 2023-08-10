@@ -60,7 +60,7 @@ var Matrix =
         _.latex = function () {
             var latex = this.vlines.map(function(line) {
                 return ['[',']'].join(line);
-            }).join('');
+            }).reverse().join('');
             var row;
 
             this.eachChild(function (cell) {
@@ -428,18 +428,30 @@ var Matrix =
 
             // Add new cells, one for each row
             for (var i = 0; i < rows.length; i += 1) {
+                // Add cell routine
                 block = MatrixCell(i);
                 block.parent = this;
                 newCells.push(block);
                 rows[i].splice(column, 0, block);
 
-                block.jQ = jQuery('<td class="mq-empty">')
-                    .attr(mqBlockId, block.id);
+                block.jQ = jQuery('<div class="mq-empty">')
+                    .attr(mqBlockId, block.id)
+                    .appendTo(jQuery('<td></td>'));
+            }
+
+            // Correct vline indices
+            for (var i = 0; i < this.vlines.length; i++) {
+                const vIndex = this.vlines[i];
+                if (vIndex >= column) {
+                    this.vlines[i] = vIndex + 1;
+                } else {
+                    break;
+                }
             }
 
             // Add cell <td> elements in correct positions
             this.jQ.find('tr').each(function (i) {
-                jQuery(this).find('td').eq(column - 1).after(rows[i][column].jQ);
+                jQuery(this).find('td:not(.mq-matrix-vline)').eq(column - 1).after(rows[i][column].jQ.parent());
             });
 
             // Flatten the rows array-of-arrays
