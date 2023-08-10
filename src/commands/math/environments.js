@@ -347,6 +347,29 @@ var Matrix =
                 this.jQ.find('tr').eq(row).remove();
             }
             if (isEmpty(myColumn) && myRow.length > 1) {
+                // First correct the vline indices
+                const colIndex = columns.indexOf(myColumn);
+                
+                for (var i = 0; i < this.vlines.length; i++) {
+                    const vIndex = this.vlines[i];
+                    if (vIndex > colIndex) {
+                        this.vlines[i] = vIndex - 1;
+                    } else {
+                        break;
+                    }
+                }
+
+                // Check for duplicates and, if so, remove them
+                if (this.vlines.filter(function (v) {return v === colIndex;}).length > 1) {
+                    // Loop over each row and remove the <td> at indexOf colIndex
+                    const removeIndex = this.vlines.indexOf(colIndex);
+                    this.jQ.find('tr').each(function(_, obj) {
+                        jQuery(obj).find('td.mq-matrix-vline').eq(removeIndex).remove();
+                    });
+                    this.vlines.splice(removeIndex, 1);
+                }
+
+                // Then remove column
                 remove(myColumn);
             }
             this.finalizeTree();
@@ -574,4 +597,11 @@ var MatrixCell = P(MathBlock, function (_, super_) {
         if (!atExitPoint && this[dir]) cursor.insAtDirEnd(-dir, this[dir]);
         else cursor.insDirOf(dir, this.parent);
     };
+    // This should be super_.remove() with the this.jQ.remove(); replaced by
+    // by removing its parent
+    _.remove = function() {
+        this.jQ.parent().remove();
+        this.postOrder('dispose');
+        return this.disown();
+    }
 });
