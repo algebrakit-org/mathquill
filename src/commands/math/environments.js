@@ -93,8 +93,8 @@ var Matrix =
             });
 
             if (this.vlines.length > 0 && MathQuill.latexSyntax == 'STANDARD') {
-                let alignArg = '{';
-                for (let i = 0; i < nCols; i++) {
+                var alignArg = '{';
+                for (var i = 0; i < nCols; i++) {
                     if (this.vlines.includes(i)) {
                         alignArg += '|';
                     }
