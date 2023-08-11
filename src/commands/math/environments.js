@@ -42,6 +42,11 @@ var Matrix =
             left: null,
             right: null
         };
+        // The parentheses that are used for standard latex rendering
+        _.parenthesesLatex = {
+            left: null,
+            right: null,
+        };
         _.environment = 'matrix';
 
         // Ensure this is in reverse-column order (so [4, 2, 1])
@@ -57,21 +62,51 @@ var Matrix =
                 scale(parens, min(1 + .2 * (height - 1), 1.2), 1.05 * height);
             }
         };
+        _.wrappers = function() {
+            if (this.vlines.length > 0 && MathQuill.latexSyntax == 'STANDARD') {
+                function parenLatex(paren) {
+                    return paren || '';
+                }
+
+                return [
+                    parenLatex(this.parenthesesLatex.left) + _.template[0].join('array'),
+                    _.template[1].join('array') + parenLatex(this.parenthesesLatex.right),
+                ]
+            } else {
+                return super_.wrappers.apply(this, arguments);
+            }
+        }
         _.latex = function () {
-            var latex = this.vlines.map(function(line) {
-                return ['[',']'].join(line);
-            }).reverse().join('');
-            var row;
+            var latex, matrixLatex = '';
+            var row, nCols = 0;
 
             this.eachChild(function (cell) {
                 if (typeof row !== 'undefined') {
-                    latex += (row !== cell.row) ?
+                    matrixLatex += (row !== cell.row) ?
                         delimiters.row :
                         delimiters.column;
                 }
                 row = cell.row;
-                latex += cell.latex();
+
+                if (row === 0) nCols++;
+                matrixLatex += cell.latex();
             });
+
+            if (this.vlines.length > 0 && MathQuill.latexSyntax == 'STANDARD') {
+                let alignArg = '{';
+                for (let i = 0; i < nCols; i++) {
+                    if (this.vlines.includes(i)) {
+                        alignArg += '|';
+                    }
+                    alignArg += 'c';
+                }
+                alignArg += '}';
+                latex = alignArg + matrixLatex;
+            } else {
+                latex = this.vlines.map(function(line) {
+                    return ['[',']'].join(line);
+                }).reverse().join('') + matrixLatex;
+            }
 
             return this.wrappers().join(latex);
         };
@@ -589,8 +624,12 @@ var Matrix =
 Environments.cases = P(Matrix, function (_, super_) {
     _.environment = 'cases';
     _.parentheses = {
-        left: '\{',
+        left: '{',
         right: ''
+    };
+    _.parenthesesLatex = {
+        left: '\\left\\{\\hspace{-5pt}',
+        right: '\\right.'
     };
 });
 
@@ -602,6 +641,10 @@ Environments.pmatrix = P(Matrix, function (_, super_) {
         left: '(',
         right: ')'
     };
+    _.parenthesesLatex = {
+        left: '\\left(\\hspace{-5pt}',
+        right: '\\hspace{-5pt}\\right)'
+    };
 });
 
 Environments.bmatrix = P(Matrix, function (_, super_) {
@@ -610,6 +653,10 @@ Environments.bmatrix = P(Matrix, function (_, super_) {
         left: '[',
         right: ']'
     };
+    _.parenthesesLatex = {
+        left: '\\left[\\hspace{-5pt}',
+        right: '\\hspace{-5pt}\\right]'
+    }
 });
 
 Environments.Bmatrix = P(Matrix, function (_, super_) {
@@ -617,6 +664,10 @@ Environments.Bmatrix = P(Matrix, function (_, super_) {
     _.parentheses = {
         left: '{',
         right: '}'
+    };
+    _.parenthesesLatex = {
+        left: '\\left\\{\\hspace{-5pt}',
+        right: '\\hspace{-5pt}\\right\\}'
     };
 });
 
@@ -626,6 +677,10 @@ Environments.vmatrix = P(Matrix, function (_, super_) {
         left: '|',
         right: '|'
     };
+    _.parenthesesLatex = {
+        left: '\\left|\\hspace{-5pt}',
+        right: '\\hspace{-5pt}\\right|'
+    };
 });
 
 Environments.Vmatrix = P(Matrix, function (_, super_) {
@@ -634,6 +689,10 @@ Environments.Vmatrix = P(Matrix, function (_, super_) {
         left: '&#8214;',
         right: '&#8214;'
     };
+    _.parenthesesLatex = {
+        left: '\\left|\\hspace{-1pt}\\left|\\hspace{-5pt}',
+        right: '\\hspace{-5pt}\\right|\\hspace{-1pt}\\right|'
+    }
 });
 
 // Replacement for mathblocks inside matrix cells
