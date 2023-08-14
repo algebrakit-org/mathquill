@@ -61,7 +61,9 @@ CharCmds['\\'] = P(MathCommand, function(_, super_) {
     }
   };
   _.latex = function() {
-    return '\\' + this.ends[L].latex() + ' ';
+    // AL-147: don't add incomplete latex commands to the mathfield output
+    // return '\\' + this.ends[L].latex() + ' ';
+    return '';
   };
   _.renderCommand = function(cursor) {
     this.jQ = this.jQ.last();
