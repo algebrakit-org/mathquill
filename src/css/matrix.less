@@ -18,8 +18,7 @@
           font-family: inherit;
           width: auto;
           border-bottom: none;
-          border-spacing: 3px;
-          border-collapse: separate;
+          border-collapse: collapse;
           &.mq-rows-1 { /* better alignment when there's just one row */
             vertical-align: middle;
             margin-bottom: 1px;
@@ -32,6 +31,22 @@
           width: auto; /* defensive resets */
           text-align: center;
           vertical-align: baseline;
+          padding: 3px;
+
+          &.mq-matrix-vline {
+            width: 0;
+            padding: 0;
+            border-right: 1px solid black;
+
+            // should be within two 'regular' td matrix cells, so should always 
+            // get a padding-left. Additional offset of 3px, so it aligns with 
+            // the '& .td' 6px (3px + 3px) padding.
+            padding-left: 3px;
+
+            & + td {
+                padding-left: 6px;
+            }
+          }
         }
       }
 
