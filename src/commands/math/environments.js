@@ -401,23 +401,11 @@ var Matrix =
                 column += 1;
             });
 
-            function isEmpty(cells) {
-                var empties = [];
-                for (var i = 0; i < cells.length; i += 1) {
-                    if (cells[i].isEmpty()) empties.push(cells[i]);
-                }
-                return empties.length === cells.length;
+            //only remove the final row or column if its a 1-by-1 matrix
+            if(myColumn.length === 1 && myRow.length === 1 && isEmpty(myRow)) {
+                remove(myRow);
+                this.jQ.find('tr').eq(row).remove();
             }
-
-            function remove(cells) {
-                for (var i = 0; i < cells.length; i += 1) {
-                    if (blocks.indexOf(cells[i]) > -1) {
-                        cells[i].remove();
-                        blocks.splice(blocks.indexOf(cells[i]), 1);
-                    }
-                }
-            }
-
             if (isEmpty(myRow) && myColumn.length > 1) {
                 row = rows.indexOf(myRow);
                 // Decrease all following row numbers
@@ -449,6 +437,25 @@ var Matrix =
                 this.correctVlines();
             }
             this.finalizeTree();
+
+            return;
+
+            function isEmpty(cells) {
+                var empties = [];
+                for (var i = 0; i < cells.length; i += 1) {
+                    if (cells[i].isEmpty()) empties.push(cells[i]);
+                }
+                return empties.length === cells.length;
+            }
+
+            function remove(cells) {
+                for (var i = 0; i < cells.length; i += 1) {
+                    if (blocks.indexOf(cells[i]) > -1) {
+                        cells[i].remove();
+                        blocks.splice(blocks.indexOf(cells[i]), 1);
+                    }
+                }
+            }
         };
         _.addRow = function (afterCell) {
             var previous = [], newCells = [], next = [];
@@ -612,7 +619,7 @@ var Matrix =
                 if (dirwards) {
                     cursor.insAtDirEnd(-dir, dirwards);
                 }
-                if (this.blocks.length === 1 && this.blocks[0].isEmpty()) {
+                if (this.blocks.length === 0) {
                     finalDeleteCallback();
                     this.finalizeTree();
                 }

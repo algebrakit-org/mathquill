@@ -41,3 +41,12 @@ License, v. 2.0: [http://mozilla.org/MPL/2.0/](http://mozilla.org/MPL/2.0/)
 The quick-and-dirty is you can do whatever if modifications to MathQuill are in
 public GitHub forks. (Other ways to publicize modifications are also fine, as
 are private use modifications. See also: [MPL 2.0 FAQ](https://www.mozilla.org/en-US/MPL/2.0/FAQ/))
+
+## Export to AlgebraKiT Widgets
+To export the new version of mathquill to the algebrakit widgets:
+- make clean
+- make all
+- copy the following files to widgets/source/dist/mathquill:
+    - mathquill.css
+    - mathquill.js
+    - mathquill.min.js
