@@ -307,6 +307,11 @@ var Whitespace = LatexCmds[' '] = LatexCmds.space = P(VanillaSymbol, function(_,
             .many()
             .then(Parser.succeed(self));
     }
+
+    _.createLeftOf = function(cursor) {
+        if (cursor[L] instanceof Whitespace || cursor[R] instanceof Whitespace) return;
+        super_.createLeftOf.call(this, cursor);
+    }
 });
 
 LatexCmds["'"] = LatexCmds.prime = bind(VanillaSymbol, "'", '&prime;');
