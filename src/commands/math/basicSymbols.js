@@ -287,7 +287,27 @@ LatexCmds.f = P(Letter, function(_, super_) {
 });
 
 // VanillaSymbol's
-LatexCmds[' '] = LatexCmds.space = bind(VanillaSymbol, '\\ ', '&nbsp;');
+var Whitespace = LatexCmds[' '] = LatexCmds.space = P(VanillaSymbol, function(_, super_) {
+    _.init = function() {
+        super_.init.call(this, '\\ ', '&nbsp');
+    }
+    
+    _.siblingDeleted = function() {
+        // Remove self if there's a neighboring whitespace detected to avoid double spacing.
+        if (this[L] instanceof Whitespace || this[R] instanceof Whitespace) this.remove();
+    }
+
+    _.parser = function() {
+        var optWhitespace = Parser.optWhitespace;
+        var string = Parser.string;
+        var self = this;
+
+        return optWhitespace
+            .then(string('\\ '))
+            .many()
+            .then(Parser.succeed(self));
+    }
+});
 
 LatexCmds["'"] = LatexCmds.prime = bind(VanillaSymbol, "'", '&prime;');
 LatexCmds['″'] = LatexCmds.dprime = bind(VanillaSymbol, '″', '&Prime;');
