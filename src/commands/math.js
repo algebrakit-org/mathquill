@@ -439,8 +439,8 @@ var MathBlock = P(MathElement, function(_, super_) {
     var cursor = ctrlr.cursor;
 
     if (key === 'Spacebar' || key === 'Shift-Spacebar') {
-      var hasWhitespaceAtL = cursor[L]?.ctrlSeq == '\\ ' || false;
-      var hasNeighboringWhitespace = hasWhitespaceAtL || cursor[R]?.ctrlSeq == '\\ ';
+      var hasWhitespaceAtL = cursor[L] ? cursor[L].ctrlSeq == '\\ ' : false;
+      var hasNeighboringWhitespace = hasWhitespaceAtL || (cursor[R] && cursor[R].ctrlSeq == '\\ ');
       var preventDefault = false;
 
       if (ctrlr.options.spaceBehavesLikeTab) {
