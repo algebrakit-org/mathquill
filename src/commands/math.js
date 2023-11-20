@@ -436,25 +436,62 @@ var MathBlock = P(MathElement, function(_, super_) {
   };
 
   _.keystroke = function(key, e, ctrlr) {
-    if (ctrlr.options.spaceBehavesLikeTab
-        && key === 'Spacebar') {
-      var cursor = ctrlr.cursor
-      if(cursor[L] && cursor[L].ctrlSeq && cursor[L].ctrlSeq=='\\ ' ) {
-        //double space: escape from block if possible, otherwise interpret as moveOutOfRight
-        e.preventDefault();  //the 2nd space must not be shown
-        if (cursor.parent === ctrlr.root) {
-          //we are in the root block, nothing to escape from
-          this.moveOutOf(1, cursor);
+    var cursor = ctrlr.cursor;
+
+    if (key === 'Spacebar' || key === 'Shift-Spacebar') {
+      var hasWhitespaceAtL = cursor[L] ? cursor[L].ctrlSeq == '\\ ' : false;
+      var hasNeighboringWhitespace = hasWhitespaceAtL || (cursor[R] && cursor[R].ctrlSeq == '\\ ');
+      var preventDefault = false;
+
+      if (ctrlr.options.spaceBehavesLikeTab) {
+        if (ctrlr.doubleSpaceCache) {
+          preventDefault = true;
+
+          if (ctrlr.doubleSpaceCache.consumeWhiteSpace && hasWhitespaceAtL) {
+              // consume left whitespace
+              var l = cursor[L];
+              Fragment(l, cursor[L]).remove();
+              cursor[L] = l[L];
+          }
+          
+          const direction = key === 'Spacebar' ? R : L;
+          if (cursor.parent !== ctrlr.root) {
+            // cursor is in nested block, move up one level
+            ctrlr.escapeDir(direction, key, e);
+          } else {
+            // at top level, behave as home / end is pressed
+            cursor.insAtDirEnd(direction, ctrlr.root);
+          }
+
+          // the cached operation is performed, remove obj
+          window.clearTimeout(ctrlr.doubleSpaceCache.timeoutId);
+          delete ctrlr.doubleSpaceCache;
         } else {
-          for (l = cursor[L]; l&&l.ctrlSeq=='\\ '&&l[L]; l = l[L]);
-          if(l.ctrlSeq!='\\ ') l=l[R];
-          Fragment(l, cursor[L]).remove();
-          cursor[L]=l[L];
-          ctrlr.escapeDir(key === 'Shift-Spacebar' ? L : R, key, e);
-        }
+          if (hasNeighboringWhitespace) preventDefault = true;
+
+          var timeoutId = window.setTimeout(function() {
+            delete ctrlr.doubleSpaceCache;
+          }, ctrlr.options.doubleSpaceDelay || 500);
+
+          ctrlr.doubleSpaceCache = {
+            consumeWhiteSpace: !preventDefault,
+            timeoutId: timeoutId
+          };
+        }   
+      } else {
+        // prevent arbitrary amounts of whitespace
+        if (hasNeighboringWhitespace) preventDefault = true;
+      }
+
+      if (preventDefault) {
+        e.preventDefault();
         return;
       }
+    } else if (ctrlr.doubleSpaceCache) {
+      window.clearTimeout(ctrlr.doubleSpaceCache.timeoutId);
+      delete ctrlr.doubleSpaceCache;
     }
+
     return super_.keystroke.apply(this, arguments);
   };
 
