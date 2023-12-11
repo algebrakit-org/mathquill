@@ -44,6 +44,7 @@ are private use modifications. See also: [MPL 2.0 FAQ](https://www.mozilla.org/e
 
 ## Export to AlgebraKiT Widgets
 To export the new version of mathquill to the algebrakit widgets:
+- npm install
 - make clean
 - make all
 - copy the following files to widgets/source/dist/mathquill:

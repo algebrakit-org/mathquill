@@ -10,19 +10,19 @@ textbox, but any one HTML document can contain many such textboxes, so any one
 JS environment could actually contain many instances. */
 
 //A fake cursor in the fake textbox that the math is rendered in.
-var Cursor = P(Point, function(_) {
-  _.init = function(initParent, options) {
+var Cursor = P(Point, function (_) {
+  _.init = function (initParent, options) {
     this.parent = initParent;
     this.options = options;
 
     var jQ = this.jQ = this._jQ = jQuery('<span class="mq-cursor">&#8203;</span>');
     //closured for setInterval
-    this.blink = function(){ jQ.toggleClass('mq-blink'); };
+    this.blink = function () { jQ.toggleClass('mq-blink'); };
 
     this.upDownCache = {};
   };
 
-  _.show = function() {
+  _.show = function () {
     this.jQ = this._jQ.removeClass('mq-blink');
     if ('intervalId' in this) //already was shown, just restart interval
       clearInterval(this.intervalId);
@@ -37,10 +37,17 @@ var Cursor = P(Point, function(_) {
         this.jQ.appendTo(this.parent.jQ);
       this.parent.focus();
     }
-    this.intervalId = setInterval(this.blink, 500);
+    //Default blink speed is 500ms, but can be overridden by options
+    var blinkInterval = 500;
+    if (this.options && this.options.blinkInterval != null) {
+      blinkInterval = this.options.blinkInterval;
+    }
+    if (blinkInterval > 0) {
+      this.intervalId = setInterval(this.blink, blinkInterval);
+    }
     return this;
   };
-  _.hide = function() {
+  _.hide = function () {
     if ('intervalId' in this)
       clearInterval(this.intervalId);
     delete this.intervalId;
@@ -49,7 +56,7 @@ var Cursor = P(Point, function(_) {
     return this;
   };
 
-  _.withDirInsertAt = function(dir, parent, withDir, oppDir) {
+  _.withDirInsertAt = function (dir, parent, withDir, oppDir) {
     var oldParent = this.parent;
     this.parent = parent;
     this[dir] = withDir;
@@ -59,25 +66,25 @@ var Cursor = P(Point, function(_) {
     // FIXME pass cursor to .blur() so text can fix cursor pointers when removing itself
     if (oldParent !== parent && oldParent.blur) oldParent.blur(this);
   };
-  _.insDirOf = function(dir, el) {
+  _.insDirOf = function (dir, el) {
     prayDirection(dir);
     this.jQ.insDirOf(dir, el.jQ);
     this.withDirInsertAt(dir, el.parent, el[dir], el);
     this.parent.jQ.addClass('mq-hasCursor');
     return this;
   };
-  _.insLeftOf = function(el) { return this.insDirOf(L, el); };
-  _.insRightOf = function(el) { return this.insDirOf(R, el); };
+  _.insLeftOf = function (el) { return this.insDirOf(L, el); };
+  _.insRightOf = function (el) { return this.insDirOf(R, el); };
 
-  _.insAtDirEnd = function(dir, el) {
+  _.insAtDirEnd = function (dir, el) {
     prayDirection(dir);
     this.jQ.insAtDirEnd(dir, el.jQ);
     this.withDirInsertAt(dir, el, 0, el.ends[dir]);
-    if(el.focus) el.focus();
+    if (el.focus) el.focus();
     return this;
   };
-  _.insAtLeftEnd = function(el) { return this.insAtDirEnd(L, el); };
-  _.insAtRightEnd = function(el) { return this.insAtDirEnd(R, el); };
+  _.insAtLeftEnd = function (el) { return this.insAtDirEnd(L, el); };
+  _.insAtRightEnd = function (el) { return this.insAtDirEnd(R, el); };
 
   /**
    * jump up or down from one block Node to another:
@@ -87,7 +94,7 @@ var Cursor = P(Point, function(_) {
    *   + if not seek a position in the node that is horizontally closest to
    *     the cursor's current position
    */
-  _.jumpUpDown = function(from, to) {
+  _.jumpUpDown = function (from, to) {
     var self = this;
     self.upDownCache[from.id] = Point.copy(self);
     var cached = self.upDownCache[to.id];
@@ -99,7 +106,7 @@ var Cursor = P(Point, function(_) {
       to.seek(pageX, self);
     }
   };
-  _.offset = function() {
+  _.offset = function () {
     //in Opera 11.62, .getBoundingClientRect() and hence jQuery::offset()
     //returns all 0's on inline elements with negative margin-right (like
     //the cursor) at the end of their parent, so temporarily remove the
@@ -111,22 +118,22 @@ var Cursor = P(Point, function(_) {
     self.jQ.addClass('mq-cursor');
     return offset;
   };
-  _.unwrapGramp = function() {
+  _.unwrapGramp = function () {
     var gramp = this.parent.parent;
     var greatgramp = gramp.parent;
     var rightward = gramp[R];
     var cursor = this;
 
     var leftward = gramp[L];
-    gramp.disown().eachChild(function(uncle) {
+    gramp.disown().eachChild(function (uncle) {
       if (uncle.isEmpty()) return;
 
       uncle.children()
         .adopt(greatgramp, leftward, rightward)
-        .each(function(cousin) {
+        .each(function (cousin) {
           cousin.jQ.insertBefore(gramp.jQ.first());
         })
-      ;
+        ;
 
       leftward = uncle.ends[R];
     });
@@ -157,19 +164,19 @@ var Cursor = P(Point, function(_) {
     if (gramp[L].siblingDeleted) gramp[L].siblingDeleted(cursor.options, R);
     if (gramp[R].siblingDeleted) gramp[R].siblingDeleted(cursor.options, L);
   };
-  _.startSelection = function() {
+  _.startSelection = function () {
     var anticursor = this.anticursor = Point.copy(this);
     var ancestors = anticursor.ancestors = {}; // a map from each ancestor of
-      // the anticursor, to its child that is also an ancestor; in other words,
-      // the anticursor's ancestor chain in reverse order
+    // the anticursor, to its child that is also an ancestor; in other words,
+    // the anticursor's ancestor chain in reverse order
     for (var ancestor = anticursor; ancestor.parent; ancestor = ancestor.parent) {
       ancestors[ancestor.parent.id] = ancestor;
     }
   };
-  _.endSelection = function() {
+  _.endSelection = function () {
     delete this.anticursor;
   };
-  _.select = function() {
+  _.select = function () {
     var anticursor = this.anticursor;
     if (this[L] === anticursor[L] && this.parent === anticursor.parent) return false;
 
@@ -233,7 +240,7 @@ var Cursor = P(Point, function(_) {
     return true;
   };
 
-  _.clearSelection = function() {
+  _.clearSelection = function () {
     if (this.selection) {
       this.selection.clear();
       delete this.selection;
@@ -241,7 +248,7 @@ var Cursor = P(Point, function(_) {
     }
     return this;
   };
-  _.deleteSelection = function() {
+  _.deleteSelection = function () {
     if (!this.selection) return;
 
     this[L] = this.selection.ends[L][L];
@@ -250,7 +257,7 @@ var Cursor = P(Point, function(_) {
     this.selectionChanged();
     delete this.selection;
   };
-  _.replaceSelection = function() {
+  _.replaceSelection = function () {
     var seln = this.selection;
     if (seln) {
       this[L] = seln.ends[L][L];
@@ -261,24 +268,24 @@ var Cursor = P(Point, function(_) {
   };
 });
 
-var Selection = P(Fragment, function(_, super_) {
-  _.init = function() {
+var Selection = P(Fragment, function (_, super_) {
+  _.init = function () {
     super_.init.apply(this, arguments);
     this.jQ = this.jQ.wrapAll('<span class="mq-selection"></span>').parent();
-      //can't do wrapAll(this.jQ = jQuery(...)) because wrapAll will clone it
+    //can't do wrapAll(this.jQ = jQuery(...)) because wrapAll will clone it
   };
-  _.adopt = function() {
+  _.adopt = function () {
     this.jQ.replaceWith(this.jQ = this.jQ.children());
     return super_.adopt.apply(this, arguments);
   };
-  _.clear = function() {
+  _.clear = function () {
     // using the browser's native .childNodes property so that we
     // don't discard text nodes.
     this.jQ.replaceWith(this.jQ[0].childNodes);
     return this;
   };
-  _.join = function(methodName) {
-    return this.fold('', function(fold, child) {
+  _.join = function (methodName) {
+    return this.fold('', function (fold, child) {
       return fold + child[methodName]();
     });
   };
