@@ -88,9 +88,9 @@ LatexCmds.diff = P(VanillaSymbol, function(_, super_) {
   };
   _.latex = function() {
     if(MathQuill.latexSyntax=='STANDARD') {
-      return 'd';
+      return '\\text{d}';
     } else {
-      return '\\diff';
+      return '\\diff ';
     }
   }
 });
