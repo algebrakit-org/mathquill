@@ -15,14 +15,6 @@ ifneq ($(shell node -e 'console.log("I am Node.js")'), I am Node.js)
   $(error Please install Node.js: https://nodejs.org/ )
 endif
 
-# stupid GNU vs BSD https://github.com/mathquill/mathquill/pull/653/commits/4332b0e97a92fb1362123a06b68fa49d9efb6f38#r68305423
-ifeq (x, $(shell echo xy | sed -r 's/(x)y/\1/' 2>/dev/null))
-  SED_IN_PLACE = sed -i    # GNU
-else
-  SED_IN_PLACE = sed -i '' # BSD
-endif
-
-
 #
 # -*- Configuration -*-
 #
@@ -32,39 +24,47 @@ SRC_DIR = ./src
 INTRO = $(SRC_DIR)/intro.js
 OUTRO = $(SRC_DIR)/outro.js
 
-PJS_SRC = ./node_modules/pjs/src/p.js
-
 BASE_SOURCES = \
-  $(PJS_SRC) \
-  $(SRC_DIR)/tree.js \
-  $(SRC_DIR)/cursor.js \
-  $(SRC_DIR)/controller.js \
-  $(SRC_DIR)/publicapi.js \
-  $(SRC_DIR)/services/*.util.js \
-  $(SRC_DIR)/services/*.js
+  $(SRC_DIR)/utils.ts \
+  $(SRC_DIR)/dom.ts \
+  $(SRC_DIR)/unicode.ts \
+	$(SRC_DIR)/browser.ts \
+  $(SRC_DIR)/animate.ts \
+  $(SRC_DIR)/services/aria.ts \
+  $(SRC_DIR)/domFragment.ts \
+  $(SRC_DIR)/tree.ts \
+  $(SRC_DIR)/cursor.ts \
+  $(SRC_DIR)/controller.ts \
+  $(SRC_DIR)/publicapi.ts \
+  $(SRC_DIR)/services/parser.util.ts \
+  $(SRC_DIR)/services/saneKeyboardEvents.util.ts \
+  $(SRC_DIR)/services/exportText.ts \
+  $(SRC_DIR)/services/focusBlur.ts \
+  $(SRC_DIR)/services/keystroke.ts \
+  $(SRC_DIR)/services/latex.ts \
+  $(SRC_DIR)/services/mouse.ts \
+  $(SRC_DIR)/services/scrollHoriz.ts \
+  $(SRC_DIR)/services/textarea.ts
 
 SOURCES_FULL = \
   $(BASE_SOURCES) \
-  $(SRC_DIR)/commands/math.js \
-  $(SRC_DIR)/commands/text.js \
-  $(SRC_DIR)/commands/math/basicSymbols.js \
-  $(SRC_DIR)/commands/math/commands.js \
-  $(SRC_DIR)/commands/math/advancedSymbols.js \
-  $(SRC_DIR)/commands/math/environments.js \
-  $(SRC_DIR)/commands/math/algebrakitCommands.js \
-  $(SRC_DIR)/commands/math/LatexCommandInput.js
-#  $(SRC_DIR)/commands/math/*.js
-# FIXME text.js currently depends on math.js (#435), restore these when fixed:
-# $(SRC_DIR)/commands/*.js \
-# $(SRC_DIR)/commands/*/*.js
+  $(SRC_DIR)/commands/math.ts \
+  $(SRC_DIR)/commands/text.ts \
+  $(SRC_DIR)/commands/math/basicSymbols.ts \
+  $(SRC_DIR)/commands/math/commands.ts \
+  $(SRC_DIR)/commands/math/advancedSymbols.ts \
+  $(SRC_DIR)/commands/math/environments.ts \
+  $(SRC_DIR)/commands/math/algebrakitCommands.ts \
+  $(SRC_DIR)/commands/math/LatexCommandInput.ts
+
 
 SOURCES_BASIC = \
   $(BASE_SOURCES) \
-  $(SRC_DIR)/commands/math.js \
-  $(SRC_DIR)/commands/math/basicSymbols.js \
-  $(SRC_DIR)/commands/math/commands.js \
-  $(SRC_DIR)/commands/math/environments.js \
-  $(SRC_DIR)/commands/math/algebrakitCommands.js \
+  $(SRC_DIR)/commands/math.ts \
+  $(SRC_DIR)/commands/math/basicSymbols.ts \
+  $(SRC_DIR)/commands/math/commands.ts \
+  $(SRC_DIR)/commands/math/environments.ts \
+  $(SRC_DIR)/commands/math/algebrakitCommands.ts \
 
 CSS_DIR = $(SRC_DIR)/css
 CSS_MAIN = $(CSS_DIR)/main.less
@@ -73,7 +73,8 @@ CSS_SOURCES = $(shell find $(CSS_DIR) -name '*.less')
 FONT_SOURCE = $(SRC_DIR)/fonts
 FONT_TARGET = $(BUILD_DIR)/fonts
 
-UNIT_TESTS = ./test/unit/*.test.js
+TEST_SUPPORT = ./test/support/assert.ts ./test/support/trigger-event.ts ./test/support/jquery-stub.ts
+UNIT_TESTS = ./test/unit/*.test.js ./test/unit/*.test.ts
 
 # outputs
 VERSION ?= $(shell node -e "console.log(require('./package.json').version)")
@@ -111,9 +112,10 @@ BUILD_DIR_EXISTS = $(BUILD_DIR)/.exists--used_by_Makefile
 # -*- Build tasks -*-
 #
 
-.PHONY: all basic dev js uglify css font clean
+.PHONY: all basic dev js uglify css font clean setup-gitconfig prettify-all
 all: font css uglify
 basic: $(UGLY_BASIC_JS) $(BASIC_CSS)
+unminified_basic: $(BASIC_JS) $(BASIC_CSS)
 # dev is like all, but without minification
 dev: font css js
 js: $(BUILD_JS)
@@ -122,34 +124,44 @@ css: $(BUILD_CSS)
 font: $(FONT_TARGET)
 clean:
 	rm -rf $(BUILD_DIR)
-
-$(PJS_SRC): $(NODE_MODULES_INSTALLED)
+# This adds an entry to your local .git/config file that looks like this:
+# [include]
+# 	path = ../.gitconfig
+# that tells git to include the additional configuration specified inside the .gitconfig file that's checked in here.
+setup-gitconfig:
+	@git config --local include.path ../.gitconfig
+prettify-all:
+	npx prettier --write '**/*.{ts,js,css,html}'
 
 $(BUILD_JS): $(INTRO) $(SOURCES_FULL) $(OUTRO) $(BUILD_DIR_EXISTS)
-	cat $^ | ./script/escape-non-ascii > $@
-	$(SED_IN_PLACE) s/{VERSION}/v$(VERSION)/ $@
+	cat $^ | ./script/escape-non-ascii | ./script/tsc-emit-only > $@
+	perl -pi -e s/mq-/$(MQ_CLASS_PREFIX)mq-/g $@
+	perl -pi -e s/{VERSION}/v$(VERSION)/ $@
 
 $(UGLY_JS): $(BUILD_JS) $(NODE_MODULES_INSTALLED)
 	$(UGLIFY) $(UGLIFY_OPTS) < $< > $@
 
 $(BASIC_JS): $(INTRO) $(SOURCES_BASIC) $(OUTRO) $(BUILD_DIR_EXISTS)
-	cat $^ | ./script/escape-non-ascii > $@
-	$(SED_IN_PLACE) s/{VERSION}/v$(VERSION)/ $@
+	cat $^ | ./script/escape-non-ascii | ./script/tsc-emit-only > $@
+	perl -pi -e s/mq-/$(MQ_CLASS_PREFIX)mq-/g $@
+	perl -pi -e s/{VERSION}/v$(VERSION)/ $@
 
 $(UGLY_BASIC_JS): $(BASIC_JS) $(NODE_MODULES_INSTALLED)
 	$(UGLIFY) $(UGLIFY_OPTS) < $< > $@
 
 $(BUILD_CSS): $(CSS_SOURCES) $(NODE_MODULES_INSTALLED) $(BUILD_DIR_EXISTS)
 	$(LESSC) $(LESS_OPTS) $(CSS_MAIN) > $@
-	$(SED_IN_PLACE) s/{VERSION}/v$(VERSION)/ $@
+	perl -pi -e s/mq-/$(MQ_CLASS_PREFIX)mq-/g $@
+	perl -pi -e s/{VERSION}/v$(VERSION)/ $@
 
 $(BASIC_CSS): $(CSS_SOURCES) $(NODE_MODULES_INSTALLED) $(BUILD_DIR_EXISTS)
 	$(LESSC) --modify-var="basic=true" $(LESS_OPTS) $(CSS_MAIN) > $@
-	$(SED_IN_PLACE) s/{VERSION}/v$(VERSION)/ $@
+	perl -pi -e s/mq-/$(MQ_CLASS_PREFIX)mq-/g $@
+	perl -pi -e s/{VERSION}/v$(VERSION)/ $@
 
 $(NODE_MODULES_INSTALLED): package.json
 	test -e $(NODE_MODULES_INSTALLED) || rm -rf ./node_modules/ # robust against previous botched npm install
-	NODE_ENV=development npm install
+	NODE_ENV=development npm ci
 	touch $(NODE_MODULES_INSTALLED)
 
 $(BUILD_DIR_EXISTS):
@@ -163,14 +175,22 @@ $(FONT_TARGET): $(FONT_SOURCE) $(BUILD_DIR_EXISTS)
 #
 # -*- Test tasks -*-
 #
+.PHONY:
+lint:
+	npx tsc --noEmit
+  # Make sure that the public, standalone type definitions do not depend on any internal sources.
+	npx tsc --noEmit -p test/tsconfig.public-types-test.json
 
-.PHONY: test server run-server
+.PHONY: test server benchmark
 server:
 	node script/test_server.js
 test: dev $(BUILD_TEST) $(BASIC_JS) $(BASIC_CSS)
 	@echo
 	@echo "** now open test/{unit,visual}.html in your browser to run the {unit,visual} tests. **"
+benchmark: dev $(BUILD_TEST) $(BASIC_JS) $(BASIC_CSS)
+	@echo
+	@echo "** now open benchmark/{render,select,update}.html in your browser. **"
 
-$(BUILD_TEST): $(INTRO) $(SOURCES_FULL) $(UNIT_TESTS) $(OUTRO) $(BUILD_DIR_EXISTS)
-	cat $^ > $@
-	$(SED_IN_PLACE) s/{VERSION}/v$(VERSION)/ $@
+$(BUILD_TEST): $(INTRO) $(SOURCES_FULL) $(TEST_SUPPORT) $(UNIT_TESTS) $(OUTRO) $(BUILD_DIR_EXISTS)
+	cat $^ | ./script/tsc-emit-only > $@
+	perl -pi -e s/{VERSION}/v$(VERSION)/ $@

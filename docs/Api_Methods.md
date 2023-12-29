@@ -1,9 +1,9 @@
 # API Methods
 
-To use the MathQuill API, first get the latest version of the interface:
+To use the MathQuill API, first get an instance of the latest version of the interface:
 
 ```js
-var MQ = MathQuill.getInterface(2);
+var MQ = MathQuill.getInterface(3);
 ```
 
 By default, MathQuill overwrites the global `MathQuill` variable when loaded. If you do not want this behavior, you can use `.noConflict()` ([similar to `jQuery.noConflict()`](http://api.jquery.com/jQuery.noConflict)):
@@ -12,10 +12,10 @@ By default, MathQuill overwrites the global `MathQuill` variable when loaded. If
 <script src="/path/to/first-mathquill.js"></script>
 <script src="/path/to/second-mathquill.js"></script>
 <script>
-var secondMQ = MathQuill.noConflict().getInterface(2);
+var secondMQ = MathQuill.noConflict().getInterface(3);
 secondMQ.MathField(...);
 
-var firstMQ = MathQuill.getInterface(2);
+var firstMQ = MathQuill.getInterface(3);
 firstMQ.MathField(...);
 </script>
 ```
@@ -66,8 +66,19 @@ MQ(otherSpan) // => null
 
 ## MQ.config(config)
 
-Updates the global [configuration options](Config.md) (which can be overridden on a per-field basis).
+Updates the default [configuration options](Config.md) for this instance of the API (which can be overridden on a per-field basis -- see the `MQ.MathField` and `MQ.StaticMath` constructors above).
 
+If there are multiple instances of the MathQuill API, `MQ.config()` only affects the math MathQuill objects created by `MQ`. E.g.:
+
+```javascript
+var MQ1 = MathQuill.getInterface(3), MQ2 = MathQuill.getInterface(3);
+
+MQ1.config(myConfig);
+MQ1.MathField(a); // configured with myConfig
+MQ1.MathField(b);
+
+MQ2.MathField(c); // unaffected by myConfig
+```
 
 
 # Comparing MathFields
@@ -122,7 +133,7 @@ Any element that has been turned into a MathQuill instance can be reverted:
 </span>
 ```
 ```js
-mathfield.revert().html(); // => 'some <code>HTML</code>'
+mathfield.revert().innerHTML; // => 'some <code>HTML</code>'
 ```
 
 ## .reflow()
@@ -148,7 +159,17 @@ Returns the contents as LaTeX.
 
 This will render the argument as LaTeX in the MathQuill instance.
 
+## .selection()
 
+Returns the current cursor position / selection within the latex.
+If the cursor is before the plus this method would return:
+```js
+{
+  latex: 'a+b',
+  startIndex: 1,
+  endIndex: 1
+}
+```
 
 # Editable MathField methods
 
@@ -221,6 +242,26 @@ Simulates typing text, one character at a time from where the cursor currently i
 mathField.typedText('x=-b\\pm \\sqrt b^2 -4ac');
 ```
 
+## .setAriaLabel(ariaLabel)
+
+Specify an [ARIA label][`aria-label`] for this field, for screen readers. The actual [`aria-label`] includes this label followed by the math content of the field as speech. Default: `'Math Input'`
+
+## .getAriaLabel()
+
+Returns the [ARIA label][`aria-label`] for this field, for screen readers. If no ARIA label has been specified, `'Math Input'` is returned.
+
+## .setAriaPostLabel(ariaPostLabel, timeout)
+
+Specify a suffix to be appended to the [ARIA label][`aria-label`], after the math content of the field. Default: `''` (empty string)
+
+If a timeout (in ms) is supplied, and the math field has keyboard focus when the time has elapsed, an ARIA alert will fire which will cause a screen reader to read the content of the field along with the ARIA post-label. This is useful if the post-label contains an evaluation, error message, or other text that the user needs to know about.
+
+## .getAriaPostLabel()
+
+Returns the suffix to be appended to the [ARIA label][`aria-label`], after the math content of the field. If no ARIA post-label has been specified, `''` (empty string) is returned.
+
+[`aria-label`]: https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/ARIA_Techniques/Using_the_aria-label_attribute
+
 ## .config(new_config)
 
 Changes the [configuration](Config.md) of just this math field.
@@ -243,3 +284,15 @@ Allows MathQuill to parse custom embedded objects from latex, where `options` is
 ## Note on Experimental Features
 
 Methods marked as experimental may be altered drastically or removed in future versions. They may also receive less maintenance than other non-experimental features.
+
+# Inner MathField methods
+
+Inner math fields have all of the [above](#editable-mathfield-methods) methods in addition to the ones listed here.
+
+## makeStatic()
+
+Converts the editable inner field into a static one.
+
+## makeEditable()
+
+Converts the static inner field into an editable one.

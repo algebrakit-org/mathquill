@@ -1,4 +1,5 @@
 @omit-font-face: true;  // Already preloaded in formula editor
+// @omit-font-face:~"";
 .font-face;
 .font-face() when not (@omit-font-face) {
   @font-face {
@@ -8,6 +9,7 @@
 }
 
 @basic: true;  // Already preloaded in formula editor
+// @basic:~"";
 .font-srcs() when not (@basic) {
   src: url(fonts/Symbola.eot);
   src:
