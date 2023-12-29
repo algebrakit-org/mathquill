@@ -285,24 +285,43 @@ baseOptionProcessors.autoCommands = function (cmds: string | undefined) {
   if (typeof cmds !== 'string' || !/^[a-z]+(?: [a-z]+)*$/i.test(cmds)) {
     throw '"' + cmds + '" not a space-delimited list of only letters';
   }
-  var list = cmds.split(' ');
-  var dict: AutoDict = {};
-  var maxLength = 0;
 
-  for (var i = 0; i < list.length; i += 1) {
-    var cmd = list[i];
-    if (cmd.length < 2) {
-      throw 'autocommand "' + cmd + '" not minimum length of 2';
+  //mslob: this can be removed when old autocommands are removed from akit's code
+  if (typeof cmds === 'string') {
+    if (!/^[a-z]+(?: [a-z]+)*$/i.test(cmds)) {
+      throw '"' + cmds + '" not a space-delimited list of only letters';
     }
 
-    if (LatexCmds[cmd] === OperatorName) {
-      throw '"' + cmd + '" is a built-in operator name';
-    }
-    dict[cmd] = 1;
-    maxLength = max(maxLength, cmd.length);
+    var _cmds: {[key: string]: 1} = {};
+    cmds.split(' ').forEach(_cmd => {
+      _cmds[_cmd] = 1;
+    });
+
+    return buildDict(_cmds);
   }
-  dict._maxLength = maxLength;
-  return dict;
+
+  return buildDict(cmds);
+
+  function buildDict(cmds: {[key: string]: string | 1}): AutoDict {
+    var list = Object.keys(cmds);
+    var dict: AutoDict = {};
+    var maxLength = 0;
+
+    for (var i = 0; i < list.length; i += 1) {
+      var cmd = list[i];
+      if (cmd.length < 2) {
+        throw 'autocommand "' + cmd + '" not minimum length of 2';
+      }
+  
+      if (LatexCmds[cmd] === OperatorName) {
+        throw '"' + cmd + '" is a built-in operator name';
+      }
+      dict[cmd] = cmds[cmd];
+      maxLength = max(maxLength, cmd.length);
+    }
+    dict._maxLength = maxLength;
+    return dict;
+  }
 };
 
 Options.prototype.quietEmptyDelimiters = {};
@@ -485,76 +504,61 @@ class Letter extends Variable {
       }
     );
 
-    let autoOpsLength = autoOps._maxLength || 0;
+    // algebrakit, mslob. Do not search commands in substrings, to allow entry of text like 'afstand' (which contains 'tan')
+    let word = str;
+    let first: NodeRef = lR || this.parent.getEnd(L);
+    let len = str.length;
+    let last: MQNode = undefined!;
+    
+    if (!first) return;
 
-    // check for operator names: at each position from left to right, check
-    // substrings from longest to shortest
-    outer: for (
-      var i = 0, first = (l as MQNode)[R] || this.parent.getEnd(L);
-      first && i < str.length;
-      i += 1, first = (first as MQNode)[R]
-    ) {
-      for (var len = min(autoOpsLength, str.length - i); len > 0; len -= 1) {
-        var word = str.slice(i, i + len);
-        var last: MQNode = undefined!; // TODO - TS complaining that we use last before assigning to it
+    if (autoOps.hasOwnProperty(word)) {
+      for (let j: number = 0, letter: NodeRef = first; first && j < len; j += 1) {
+        if (letter instanceof Letter) {
+          letter.italicize(false);
+          last = letter;
+        }
+        letter = letter ? letter.getEnd(R) : 0;
+      }
 
-        if (autoOps.hasOwnProperty(word)) {
-          for (
-            var j = 0, letter: NodeRef = first;
-            j < len;
-            j += 1, letter = (letter as MQNode)[R]
-          ) {
-            if (letter instanceof Letter) {
-              letter.italicize(false);
-              last = letter;
-            }
-          }
-
-          var isBuiltIn = BuiltInOpNames.hasOwnProperty(word);
-          first.ctrlSeq =
-            (isBuiltIn ? '\\' : '\\operatorname{') + first.ctrlSeq;
-          last.ctrlSeq += isBuiltIn ? ' ' : '}';
-
-          if (TwoWordOpNames.hasOwnProperty(word)) {
-            const lastL = last[L];
-            const lastLL = lastL && lastL[L];
-            const lastLLL = (lastLL && lastLL[L]) as MQNode;
-            lastLLL.domFrag().addClass('mq-last');
-          }
-
-          if (!this.shouldOmitPadding(first[L]))
-            first.domFrag().addClass('mq-first');
-          if (!this.shouldOmitPadding(last[R])) {
-            if (last[R] instanceof SupSub) {
-              var supsub = last[R] as MQNode; // XXX monkey-patching, but what's the right thing here?
-              // Have operatorname-specific code in SupSub? A CSS-like language to style the
-              // math tree, but which ignores cursor and selection (which CSS can't)?
-              var respace =
-                (supsub.siblingCreated =
-                supsub.siblingDeleted =
-                  function () {
-                    supsub
-                      .domFrag()
-                      .toggleClass(
-                        'mq-after-operator-name',
-                        !(supsub[R] instanceof Bracket)
-                      );
-                  });
-              respace();
-            } else {
-              last
-                .domFrag()
-                .toggleClass('mq-last', !(last[R] instanceof Bracket));
-            }
-          }
-
-          i += len - 1;
-          first = last;
-          continue outer;
+      const isBuiltIn = BuiltInOpNames.hasOwnProperty(word);
+      first.ctrlSeq = (isBuiltIn ? '\\' : '\\operatorname{') + first.ctrlSeq;
+      last.ctrlSeq += (isBuiltIn ? ' ' : '}');
+      
+      if (TwoWordOpNames.hasOwnProperty(word)) {
+        const lastL = last[L];
+        const lastLL = lastL && lastL[L];
+        const lastLLL = (lastLL && lastLL[L]) as MQNode;
+        lastLLL.domFrag().addClass('mq-last');
+      }
+      if (!this.shouldOmitPadding(first[L]))
+      first.domFrag().addClass('mq-first');
+      if (!this.shouldOmitPadding(last[R])) {
+        if (last[R] instanceof SupSub) {
+          var supsub = last[R] as MQNode; // XXX monkey-patching, but what's the right thing here?
+          // Have operatorname-specific code in SupSub? A CSS-like language to style the
+          // math tree, but which ignores cursor and selection (which CSS can't)?
+          var respace =
+            (supsub.siblingCreated =
+            supsub.siblingDeleted =
+              function () {
+                supsub
+                  .domFrag()
+                  .toggleClass(
+                    'mq-after-operator-name',
+                    !(supsub[R] instanceof Bracket)
+                  );
+              });
+          respace();
+        } else {
+          last
+            .domFrag()
+            .toggleClass('mq-last', !(last[R] instanceof Bracket));
         }
       }
     }
   }
+
   shouldOmitPadding(node: NodeRef) {
     // omit padding if no node
     if (!node) return true;
@@ -734,8 +738,35 @@ LatexCmds.f = class extends Letter {
 };
 
 // VanillaSymbol's
-LatexCmds[' '] = LatexCmds.space = () =>
-  new DigitGroupingChar('\\ ', h('span', {}, [h.text(U_NO_BREAK_SPACE)]), ' ');
+LatexCmds[' '] = LatexCmds.space = class extends VanillaSymbol {
+  constructor() {
+    super('\\ ', h('span', {}, [h.text(U_NO_BREAK_SPACE)]), ' ');
+  }
+
+  siblingDeleted() {
+    // Remove self if there's a neighboring whitespace detected to avoid double spacing.
+    if (this[L] instanceof LatexCmds.space || this[R] instanceof LatexCmds.space) this.remove();
+  }
+  
+  parser() {
+    var optWhitespace = Parser.optWhitespace;
+    var string = Parser.string;
+    var self = this;
+
+    return optWhitespace 
+      .then(string('\\ '))
+      .many()
+      .then(Parser.succeed(self));
+  }
+
+  createLeftOf(cursor: Cursor) {
+    if (cursor[L] instanceof LatexCmds.space || cursor[R] instanceof LatexCmds.space) return;
+    super.createLeftOf(cursor);
+  }
+} 
+
+// () =>
+  // new DigitGroupingChar('\\ ', h('span', {}, [h.text(U_NO_BREAK_SPACE)]), ' ');
 
 LatexCmds['.'] = () =>
   new DigitGroupingChar(
@@ -788,6 +819,8 @@ LatexCmds['%'] = class extends NonSymbolaSymbol {
       .or(super.parser());
   }
 };
+LatexCmds['permil'] = LatexCmds['permille'] = LatexCmds['‰'] = () => new NonSymbolaSymbol('‰', h.entityText('&#8240;'), 'permille');
+LatexCmds['#'] = bindVanillaSymbol('\\#', '#', 'hash');
 
 LatexCmds['∥'] = LatexCmds.parallel = bindVanillaSymbol(
   '\\parallel ',
@@ -1318,3 +1351,8 @@ baseOptionProcessors.interpretTildeAsSim = function (val: boolean | undefined) {
   }
   return interpretAsSim;
 };
+
+// #6401 make ':' a BinaryOperator to correctly render spacing. Note that this
+// way of rendering should get overruled by the 'typingColonWritesDivisionSymbol'
+// option, applied in MathBlock _chToCmd function.
+CharCmds[':'] = bindBinaryOperator(':', ':', ':');

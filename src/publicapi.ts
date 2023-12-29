@@ -97,8 +97,10 @@ class Options {
   autoSubscriptNumerals?: boolean;
   supSubsRequireOperand?: boolean;
   spaceBehavesLikeTab?: boolean;
+  typingXWritesTimesSymbol?: boolean;
   typingAsteriskWritesTimesSymbol?: boolean;
-  typingSlashWritesDivisionSymbol: boolean;
+  typingSlashWritesDivisionSymbol?: boolean;
+  typingColonWritesDivisionSymbol?: boolean;
   typingPercentWritesPercentOf?: boolean;
   resetCursorOnBlur?: boolean | undefined;
   leftRightIntoCmdGoes?: 'up' | 'down';
@@ -190,6 +192,8 @@ MathQuill.interfaceVersion = function (v: number) {
   return MathQuill;
 };
 MathQuill.getInterface = getInterface;
+
+MathQuill.latexSyntax = 'STANDARD';
 
 var MIN = (getInterface.MIN = 1),
   MAX = (getInterface.MAX = 3);
@@ -359,8 +363,14 @@ function getInterface(v: number): MathQuill.v3.API | MathQuill.v1.API {
       this.__controller.editablesTextareaEvents();
       return this;
     }
-    focus() {
-      this.__controller.getTextareaOrThrow().focus();
+    // AL-872
+    // focus() {
+    //   this.__controller.getTextareaOrThrow().focus();
+    //   this.__controller.scrollHoriz();
+    //   return this;
+    // }
+    focus(args?: FocusOptions) {
+      this.__controller.getTextareaOrThrow().focus(args);
       this.__controller.scrollHoriz();
       return this;
     }

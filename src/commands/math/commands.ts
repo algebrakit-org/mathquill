@@ -204,6 +204,32 @@ LatexCmds.dot = () => {
     )
   );
 };
+LatexCmds.ddot = () => {
+  return new MathCommand(
+    '\\ddot',
+    new DOMView(1, (blocks) => 
+      h('span', { class: 'mq-non-leaf' }, [
+        h('span', { class: 'mq-dot-recurring-inner' }, [
+          h('span', { class: 'mq-dot-recurring' }, [h.text(U_DDOT_ABOVE)]),
+          h.block('span', { class: 'mq-empty-box' }, blocks[0]),
+        ]),
+      ])
+    )
+  )
+}
+LatexCmds.dddot = () => {
+  return new MathCommand(
+    '\\dddot',
+    new DOMView(1, (blocks) => 
+      h('span', { class: 'mq-non-leaf' }, [
+        h('span', { class: 'mq-dot-recurring-inner' }, [
+          h('span', { class: 'mq-dot-recurring' }, [h.text(U_DDDOT_ABOVE)]),
+          h.block('span', { class: 'mq-empty-box' }, blocks[0]),
+        ]),
+      ])
+    )
+  )
+}
 
 // `\textcolor{color}{math}` will apply a color to the given math content, where
 // `color` is any valid CSS Color Value (see [SitePoint docs][] (recommended),
@@ -785,28 +811,87 @@ LatexCmds['∏'] =
 LatexCmds.coprod = LatexCmds.coproduct = () =>
   new SummationNotation('\\coprod ', U_NARY_COPRODUCT, 'co product');
 
+LatexCmds.bigcup = () =>
+  new SummationNotation('\\bigcup', U_NARY_UNION, 'union');
+
+LatexCmds.bigcap = () =>
+  new SummationNotation('\\bigcap', U_NARY_INTERSECTION, 'intersection');
+
+
+LatexCmds['intsym'] =
+  class extends MQSymbol {
+    constructor() {
+      super(
+        '\\int ', 
+        h('span', { class: 'mq-int mq-non-leaf' }, [
+          h('big', {}, [h.text(U_INTEGRAL)]),
+        ]),
+        'integral',
+      );
+    }
+  };
+
 LatexCmds['∫'] =
   LatexCmds['int'] =
   LatexCmds.integral =
     class extends SummationNotation {
+      limits: boolean;
+
       constructor() {
         super('\\int ', '', 'integral');
 
+        this.limits = true;
         this.ariaLabel = 'integral';
-        this.domView = new DOMView(2, (blocks) =>
-          h('span', { class: 'mq-int mq-non-leaf' }, [
-            h('big', {}, [h.text(U_INTEGRAL)]),
-            h('span', { class: 'mq-supsub mq-non-leaf' }, [
-              h('span', { class: 'mq-sup' }, [
-                h.block('span', { class: 'mq-sup-inner' }, blocks[1]),
+      }
+
+      html() {
+        if (this.limits) {
+          this.domView = new DOMView(2, (blocks) => 
+            h('span', { class: 'mq-int mq-non-leaf' }, [
+              h('big', {}, [h.text(U_INTEGRAL)]),
+              h('span', { class: 'mq-supsub mq-non-leaf' }, [
+                h('span', { class: 'mq-sup' }, [
+                  h.block('span', { class: 'mq-sup-inner' }, blocks[1])
+                ]),
+                h.block('span', { class: 'mq-sub' }, blocks[0]),
+                h('span', { style: 'display:inline-block;width:0' }, [
+                  h.text(U_ZERO_WIDTH_SPACE),
+                ]),
               ]),
-              h.block('span', { class: 'mq-sub' }, blocks[0]),
-              h('span', { style: 'display:inline-block;width:0' }, [
-                h.text(U_ZERO_WIDTH_SPACE),
-              ]),
-            ]),
-          ])
-        );
+            ])
+          );
+        } else {
+          this.domView = new DOMView(0, () =>
+            h('span', { class: 'mq-int mq-non-leaf' }, [
+              h('big', {}, [h.text(U_INTEGRAL)]),
+            ])
+          );
+        }
+
+        return super.html();
+      }
+
+      parser() {
+        const string = Parser.string;
+        const optWhitespace = Parser.optWhitespace;
+        const succeed = Parser.succeed;
+        const block = latexMathParser.block;
+
+        const self = this;
+        const blocks = self.blocks = [new MathBlock(), new MathBlock()];
+        for (let i = 0; i < blocks.length; i += 1) {
+          blocks[i].adopt(self, self.getEnd(R), 0);
+        }
+
+        self.limits = false;
+        return optWhitespace.then(string('_').or(string('^')).then(function(subOrSub: string) {
+          self.limits = true;
+          const child = blocks[subOrSub === '_' ? 0 : 1];
+          return block.then(function (block) {
+            block.children().adopt(child, child.getEnd(R), 0);
+            return succeed(self);
+          });
+        }).atLeast(1)).or(succeed(noop)).result(self);
       }
 
       createLeftOf(cursor: Cursor) {
@@ -814,6 +899,51 @@ LatexCmds['∫'] =
         MathCommand.prototype.createLeftOf.call(this, cursor);
       }
     };
+
+var LimitTo = (LatexCmds.limto =
+  class LimitToNode extends MathCommand {
+    ctrlSeq = '\\limto';
+    domView = new DOMView(2, (blocks) => 
+      h('span', { class: 'mq-stack-operator mq-non-leaf' }, [
+        h('span', { class: 'mq-operator-name' }, [h.text('lim')]),
+        h('span', { class: 'mq-from' }, [
+          h.block('span', { class: 'mq-non-leaf' }, blocks[0]),
+          h('span', { class: 'mq-non-leaf' }, [h.text(U_RIGHTARROW)]),
+          h.block('span', { class: 'mq-non-leaf' }, blocks[1]),
+        ])
+      ])
+    );
+    textTemplate = ['limto[', '->', ']'];
+
+    latexRecursive(ctx: LatexContext) {
+      this.checkCursorContextOpen(ctx);
+
+      if (MathQuill.latexSyntax === 'STANDARD') {
+        let beforeLength: number, afterLength: number;
+
+        ctx.latex += '\\lim_{';
+
+        beforeLength = ctx.latex.length;
+        this.blocks![0].latexRecursive(ctx);
+        afterLength = ctx.latex.length;
+        if (beforeLength === afterLength) ctx.latex += ' ';
+
+        ctx.latex += '\\rightarrow ';
+
+        beforeLength = ctx.latex.length;
+        this.blocks![1].latexRecursive(ctx);
+        afterLength = ctx.latex.length;
+        if (beforeLength === afterLength) ctx.latex += ' ';
+        
+        ctx.latex += '}';
+
+        this.checkCursorContextClose(ctx);
+      } else {
+        super.latexRecursive(ctx);
+      }
+    }
+  });
+
 var Fraction =
   (LatexCmds.frac =
   LatexCmds.dfrac =
@@ -978,6 +1108,48 @@ var LiveFraction =
         super.createLeftOf(cursor);
       }
     });
+
+const MixedFraction = 
+  (LatexCmds.MixedFraction = 
+    class extends Fraction {
+      ctrlSeq = '\\MixedFraction';
+      domView = new DOMView(3, (blocks) => 
+        h('span', {}, [
+          h.block('span', { class: 'mq-non-leaf' }, blocks[0]),
+          h('span', { class: 'mq-fraction mq-non-leaf' }, [
+            h.block('span', { class: 'mq-numberator' }, blocks[1]),
+            h.block('span', { class: 'mq-denominator' }, blocks[2]),
+            h('span', { style: 'display:inline-block;width:0;' }, [h.text(U_ZERO_WIDTH_SPACE)])
+          ])
+        ])
+      );
+      textTemplate = ['MixedFraction[', '(', ')/(', ')]'];
+      latexRecursive(ctx: LatexContext) {
+        this.checkCursorContextOpen(ctx);
+
+        ctx.latex += '{';
+
+        const blockLatex = this.blocks!.map(block => {
+          const blockCtx: LatexContext = {
+            latex: '',
+            startIndex: 0,
+            endIndex: 0,
+          };
+
+          block.latexRecursive(blockCtx);
+          if (blockCtx.startIndex === blockCtx.endIndex) {
+            blockCtx.latex += ' ';
+          }
+
+          return blockCtx.latex;
+        });
+
+        ctx.latex += blockLatex[0] + '\\ \\frac{' + blockLatex[1] + '}{' + blockLatex [2] + '}}';
+
+        this.checkCursorContextClose(ctx);
+      }
+    }
+  );
 
 const AnsBuilder = () =>
   new MQSymbol(
@@ -1570,17 +1742,17 @@ function bindCharBracketPair(
   ] = name;
 }
 bindCharBracketPair('(', '', 'parenthesis');
-bindCharBracketPair('[', '', 'bracket');
+// bindCharBracketPair('[', '', 'bracket');
 bindCharBracketPair('{', '\\{', 'brace');
-LatexCmds.langle = () =>
-  new Bracket(L, '&lang;', '&rang;', '\\langle ', '\\rangle ');
-LatexCmds.rangle = () =>
-  new Bracket(R, '&lang;', '&rang;', '\\langle ', '\\rangle ');
+// LatexCmds.langle = () =>
+  // new Bracket(L, '&lang;', '&rang;', '\\langle ', '\\rangle ');
+// LatexCmds.rangle = () =>
+  // new Bracket(R, '&lang;', '&rang;', '\\langle ', '\\rangle ');
 CharCmds['|'] = () => new Bracket(L, '|', '|', '|', '|');
-LatexCmds.lVert = () =>
-  new Bracket(L, '&#8741;', '&#8741;', '\\lVert ', '\\rVert ');
-LatexCmds.rVert = () =>
-  new Bracket(R, '&#8741;', '&#8741;', '\\lVert ', '\\rVert ');
+// LatexCmds.lVert = () =>
+//   new Bracket(L, '&#8741;', '&#8741;', '\\lVert ', '\\rVert ');
+// LatexCmds.rVert = () =>
+  // new Bracket(R, '&#8741;', '&#8741;', '\\lVert ', '\\rVert ');
 
 LatexCmds.left = class extends MathCommand {
   parser() {

@@ -81,7 +81,7 @@ class DOMView {
   constructor(
     public readonly childCount: number,
     public readonly render: (blocks: MathBlock[]) => Element
-  ) {}
+  ) { }
 }
 
 /**
@@ -382,7 +382,7 @@ class MQSymbol extends MathCommand {
   replaces(replacedFragment: Fragment) {
     replacedFragment.remove();
   }
-  createBlocks() {}
+  createBlocks() { }
 
   moveTowards(dir: Direction, cursor: Cursor) {
     cursor.domFrag().insDirOf(dir, this.domFrag());
@@ -405,7 +405,12 @@ class MQSymbol extends MathCommand {
 
   latexRecursive(ctx: LatexContext) {
     this.checkCursorContextOpen(ctx);
-    ctx.latex += this.ctrlSeq || '';
+    // ctx.latex += this.ctrlSeq || '';
+
+    // AL-872 
+    const saneLatex = (this.ctrlSeq || '').replace(/[^\x00-\x7F\u2030]+/g, function (ch) { return '\\text{' + ch + '}' });  //mslob: wrap unicode stuff in \text
+    ctx.latex += saneLatex;
+
     this.checkCursorContextClose(ctx);
   }
   text() {
@@ -414,7 +419,7 @@ class MQSymbol extends MathCommand {
   mathspeak(_opts?: MathspeakOptions) {
     return this.mathspeakName || '';
   }
-  placeCursor() {}
+  placeCursor() { }
   isEmpty() {
     return true;
   }
@@ -555,14 +560,64 @@ class MathBlock extends MathElement {
   ariaLabel = 'block';
 
   keystroke(key: string, e: KeyboardEvent | undefined, ctrlr: Controller) {
-    if (
-      ctrlr.options.spaceBehavesLikeTab &&
-      (key === 'Spacebar' || key === 'Shift-Spacebar')
-    ) {
-      e?.preventDefault();
-      ctrlr.escapeDir(key === 'Shift-Spacebar' ? L : R, key, e);
-      return;
+    const cursor = ctrlr.cursor;
+    const cursorL = cursor[L];
+    const cursorR = cursor[R];
+
+    if (key === 'Spacebar' || key === 'Shift-Spacebar') {
+      const hasWhitespaceAtL = cursorL ? cursorL.ctrlSeq == '\\ ' : false;
+      const hasNeighboringWhitespace = hasWhitespaceAtL || (cursorR && cursorR.ctrlSeq == '\\ ');
+      let preventDefault = false;
+
+      if (ctrlr.options.spaceBehavesLikeTab) {
+        if (ctrlr.doubleSpaceCache) {
+          preventDefault = true;
+
+          if (ctrlr.doubleSpaceCache?.consumeWhitespace && hasWhitespaceAtL) {
+            // consume left whitespace
+            new Fragment(cursorL, cursorL).remove();
+            cursor[L] = cursorL ? cursorL.getEnd(L) : 0;
+          }
+
+
+          const escapeDir = key === 'Spacebar' ? R : L;
+          if (cursor.parent !== ctrlr.root) {
+            // cursor is in nested block, move up one level
+            ctrlr.escapeDir(escapeDir, key, e);
+          } else {
+            // at top level, behave as home / end is pressed
+            cursor.insAtDirEnd(escapeDir, ctrlr.root);
+          }
+
+          // the cached operation is performed, remove obj
+          window.clearTimeout(ctrlr.doubleSpaceCache.timeoutId);
+          delete ctrlr.doubleSpaceCache;
+        } else {
+          if (hasNeighboringWhitespace) preventDefault = true;
+
+          const timeoutId = window.setTimeout(function () {
+            delete ctrlr.doubleSpaceCache;
+          }, 500);
+
+          ctrlr.doubleSpaceCache = {
+            consumeWhitespace: !preventDefault,
+            timeoutId: timeoutId,
+          };
+        }
+      } else {
+        // prevent arbitrary amounts of whitespace
+        if (hasNeighboringWhitespace) preventDefault = true;
+      }
+
+      if (preventDefault) {
+        e?.preventDefault();
+        return;
+      }
+    } else if (ctrlr.doubleSpaceCache) {
+      window.clearTimeout(ctrlr.doubleSpaceCache.timeoutId);
+      delete ctrlr.doubleSpaceCache;
     }
+
     return super.keystroke(key, e, ctrlr);
   }
 
@@ -611,10 +666,18 @@ class MathBlock extends MathElement {
   chToCmd(ch: string, options: CursorOptions) {
     var cons;
     // exclude f because it gets a dedicated command with more spacing
-    if (ch.match(/^[a-eg-zA-Z]$/)) return new Letter(ch);
+    if (ch.match(/^[a-eg-zA-Z]$/)) {
+      if (ch === 'x' && options && options.typingXWritesTimesSymbol) {
+        return (LatexCmds as LatexCmdsSingleCharBuilder)['×'](ch)
+      } else {
+        return new Letter(ch);
+      }
+    }
     else if (/^\d$/.test(ch)) return new Digit(ch);
-    else if (options && options.typingSlashWritesDivisionSymbol && ch === '/')
-      return (LatexCmds as LatexCmdsSingleCharBuilder)['÷'](ch);
+    else if (options && (
+      (options.typingSlashWritesDivisionSymbol && ch === '/') ||
+      (options.typingColonWritesDivisionSymbol && ch === ':')
+    )) return (LatexCmds as LatexCmdsSingleCharBuilder)['÷'](ch);
     else if (options && options.typingAsteriskWritesTimesSymbol && ch === '*')
       return (LatexCmds as LatexCmdsSingleCharBuilder)['×'](ch);
     else if (options && options.typingPercentWritesPercentOf && ch === '%')
@@ -630,17 +693,74 @@ class MathBlock extends MathElement {
     } else return new VanillaSymbol(ch);
   }
   write(cursor: Cursor, ch: string) {
-    var cmd = this.chToCmd(ch, cursor.options);
-    if (cursor.selection) cmd.replaces(cursor.replaceSelection());
+    let cmd = this.handleAutoCommands(cursor, ch);
+    if (cmd && (
+      ch == ' '|| (
+        ch == '(' && 
+        cmd.numBlocks && 
+        cmd.numBlocks() > 0
+      )
+     )
+    ) {
+      // no need to render the space or opening bracket
+      return;
+    }
+
+    cmd = this.chToCmd(ch, cursor.options);
+    const seln = cursor.replaceSelection();
+    if (seln) cmd?.replaces(seln);
     if (!cursor.isTooDeep()) {
-      cmd.createLeftOf(cursor.show());
+      cmd?.createLeftOf(cursor.show());
       // special-case the slash so that fractions are voiced while typing
       if (ch === '/') {
         cursor.controller.aria.alert('over');
       } else {
-        cursor.controller.aria.alert(cmd.mathspeak({ createdLeftOf: cursor }));
+        cursor.controller.aria.alert(cmd?.mathspeak({ createdLeftOf: cursor }));
       }
     }
+  }
+
+  handleAutoCommands(cursor: Cursor, ch: string): any {
+    const autoCmds = cursor.options.autoCommands;
+    const maxLength = autoCmds._maxLength
+
+    if (maxLength && maxLength > 0 && !/[a-z]/i.test(ch)) {  // mslob: trigger autocommand only after non-letter
+
+      let str: string = '',
+        l: NodeRef = cursor[L],
+        i: number = 0;
+      while (l instanceof Letter && l.ctrlSeq === l.letter && i < maxLength) {
+        str = l.letter + str;
+        l = l.getEnd(L);
+        i += 1;
+      }
+      // check for an autocommand, check only longest string of letters (so not api --> a\pi)
+      if (str.length > 0 && autoCmds.hasOwnProperty(str)) {
+        for (i = 1, l = cursor[L]; i < str.length; i += 1, l = (l as MQNode)?.getEnd(L));
+        new Fragment(l, cursor[L]).remove();
+        cursor[L] = l ? l.getEnd(L) : 0;
+
+        let cmd = autoCmds[str];
+        if (cmd == 1) cmd = str; // mslob: can be removed once old autocmds implementation is gone
+
+        var cmdKlass = (LatexCmds as LatexCmdsSingleChar)[cmd];
+        if (cmdKlass) {
+          let node: MathCommand;
+          if (cmdKlass.constructor) {
+            var actualClass = cmdKlass as typeof MathCommand; // TODO - figure out how to know the difference
+            node = new actualClass(cmd);
+          } else {
+            var builder = cmdKlass as (c: string) => MathCommand; // TODO - figure out how to know the difference
+            node = builder(cmd);
+          }
+          node?.createLeftOf(cursor);
+          return node;
+        } else {
+          // error
+        }
+      }
+    }
+    return;
   }
 
   writeLatex(cursor: Cursor, latex: string) {
@@ -740,7 +860,7 @@ API.StaticMath = function (APIClasses: APIClasses) {
   };
 };
 
-class RootMathBlock extends MathBlock {}
+class RootMathBlock extends MathBlock { }
 RootBlockMixin(RootMathBlock.prototype); // adds methods to RootMathBlock
 
 API.MathField = function (APIClasses: APIClasses) {

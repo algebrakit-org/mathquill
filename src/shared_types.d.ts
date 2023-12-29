@@ -81,6 +81,7 @@ type LatexCmd =
   | LatexFragmentBuilderNoParam;
 type LatexCmds = Record<string, LatexCmd>;
 type CharCmds = Record<string, LatexCmd>;
+type Environments = Record<string, typeof MQNode>;
 
 declare var validateAutoCommandsOption: any;
 

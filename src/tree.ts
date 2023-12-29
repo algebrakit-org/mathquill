@@ -637,6 +637,7 @@ class Fragment {
  */
 var LatexCmds: LatexCmds = {};
 var CharCmds: CharCmds = {};
+var Environments: Environments = {};
 
 function isMQNodeClass(cmd: any): cmd is typeof MQNode {
   return cmd && cmd.prototype instanceof MQNode;
