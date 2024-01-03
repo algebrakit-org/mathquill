@@ -3,7 +3,7 @@
  ***********************************/
 
 // LatexCmds.notin =
-  LatexCmds.cong =
+LatexCmds.cong =
   LatexCmds.equiv =
   LatexCmds.oplus =
   LatexCmds.otimes =
@@ -52,9 +52,11 @@ LatexCmds.ni = LatexCmds.contains = bindBinaryOperator(
   'contains'
 );
 
-LatexCmds['∉'] =
-  LatexCmds.notin =
-    bindBinaryOperator('\\notin', '&notin;', 'is not in');
+LatexCmds['∉'] = LatexCmds.notin = bindBinaryOperator(
+  '\\notin',
+  '&notin;',
+  'is not in'
+);
 
 LatexCmds.notni =
   LatexCmds.niton =
@@ -416,13 +418,21 @@ LatexCmds.nwarrow = bindVanillaSymbol(
   'northwest arrow'
 );
 LatexCmds.rightleftharpoons = bindVanillaSymbol(
-    '\\rightleftharpoons ',
-    '&#8652;',
-    'right harpoon over left harpoon' 
+  '\\rightleftharpoons ',
+  '&#8652;',
+  'right harpoon over left harpoon'
 );
 // sberkmortel add curve arrow Tracker#4792
-LatexCmds.curvearrowleft = bindVanillaSymbol('\\curvearrowleft', '&#8630;', 'curve arrow left');
-LatexCmds.curvearrowright = bindVanillaSymbol('\\curvearrowright', '&#8631;', 'curve arrow right');
+LatexCmds.curvearrowleft = bindVanillaSymbol(
+  '\\curvearrowleft',
+  '&#8630;',
+  'curve arrow left'
+);
+LatexCmds.curvearrowright = bindVanillaSymbol(
+  '\\curvearrowright',
+  '&#8631;',
+  'curve arrow right'
+);
 
 //Misc
 LatexCmds.ldots = bindVanillaSymbol('\\ldots ', '&#8230;', 'l dots');
@@ -464,7 +474,7 @@ LatexCmds.parallelogram = bindVanillaSymbol(
 LatexCmds.square = bindVanillaSymbol('\\square ', '&#11036;', 'square');
 
 //algebrakit: use SummationNotation
-// LatexCmds.bigcap = bindVanillaSymbol('\\bigcap ', '&#8745;', 'big cap'); 
+// LatexCmds.bigcap = bindVanillaSymbol('\\bigcap ', '&#8745;', 'big cap');
 // LatexCmds.bigcup = bindVanillaSymbol('\\bigcup ', '&#8746;', 'big cup');
 
 //variable-sized
@@ -511,10 +521,10 @@ LatexCmds.perp = LatexCmds.perpendicular = bindVanillaSymbol(
   '&perp;',
   'perpendicular'
 );
-LatexCmds.nperp = LatexCmds.notperpendicular = bindVanillaSymbol( 
-    '\\not\\perp', 
-    '&perp;&#x338;',
-    'not perpendicular'
+LatexCmds.nperp = LatexCmds.notperpendicular = bindVanillaSymbol(
+  '\\not\\perp',
+  '&perp;&#x338;',
+  'not perpendicular'
 );
 LatexCmds.nabla = LatexCmds.del = bindVanillaSymbol('\\nabla ', '&nabla;');
 LatexCmds.hbar = bindVanillaSymbol('\\hbar ', '&#8463;', 'horizontal bar');
@@ -542,9 +552,7 @@ LatexCmds.setminus = LatexCmds.smallsetminus = bindVanillaSymbol(
 );
 
 // LatexCmds.not = //bind(MQSymbol,'\\not ','<span class="not">/</span>', 'not');
-  LatexCmds['¬'] =
-  LatexCmds.neg =
-    bindVanillaSymbol('\\neg ', '&not;', 'not');
+LatexCmds['¬'] = LatexCmds.neg = bindVanillaSymbol('\\neg ', '&not;', 'not');
 
 LatexCmds['…'] =
   LatexCmds.dots =
@@ -699,11 +707,10 @@ LatexCmds.cap =
     bindBinaryOperator('\\cap ', '&cap;', 'intersection');
 
 // FIXME: the correct LaTeX would be ^\circ but we can't parse that
-LatexCmds.deg = LatexCmds['°'] = LatexCmds.degree = bindVanillaSymbol(
-  '\\degree ',
-  '&deg;',
-  'degrees'
-);
+LatexCmds.deg =
+  LatexCmds['°'] =
+  LatexCmds.degree =
+    bindVanillaSymbol('\\degree ', '&deg;', 'degrees');
 
 LatexCmds.ang = LatexCmds.angle = bindVanillaSymbol(
   '\\angle ',

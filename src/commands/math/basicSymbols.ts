@@ -292,8 +292,8 @@ baseOptionProcessors.autoCommands = function (cmds: string | undefined) {
       throw '"' + cmds + '" not a space-delimited list of only letters';
     }
 
-    var _cmds: {[key: string]: 1} = {};
-    cmds.split(' ').forEach(_cmd => {
+    var _cmds: { [key: string]: 1 } = {};
+    cmds.split(' ').forEach((_cmd) => {
       _cmds[_cmd] = 1;
     });
 
@@ -302,7 +302,7 @@ baseOptionProcessors.autoCommands = function (cmds: string | undefined) {
 
   return buildDict(cmds);
 
-  function buildDict(cmds: {[key: string]: string | 1}): AutoDict {
+  function buildDict(cmds: { [key: string]: string | 1 }): AutoDict {
     var list = Object.keys(cmds);
     var dict: AutoDict = {};
     var maxLength = 0;
@@ -312,7 +312,7 @@ baseOptionProcessors.autoCommands = function (cmds: string | undefined) {
       if (cmd.length < 2) {
         throw 'autocommand "' + cmd + '" not minimum length of 2';
       }
-  
+
       if (LatexCmds[cmd] === OperatorName) {
         throw '"' + cmd + '" is a built-in operator name';
       }
@@ -509,22 +509,26 @@ class Letter extends Variable {
     let first: NodeRef = lR || this.parent.getEnd(L);
     let len = str.length;
     let last: MQNode = undefined!;
-    
+
     if (!first) return;
 
     if (autoOps.hasOwnProperty(word)) {
-      for (let j: number = 0, letter: NodeRef = first; first && j < len; j += 1) {
+      for (
+        let j: number = 0, letter: NodeRef = first;
+        first && j < len;
+        j += 1
+      ) {
         if (letter instanceof Letter) {
           letter.italicize(false);
           last = letter;
         }
-        letter = letter ? letter.getEnd(R) : 0;
+        letter = letter ? letter[R] : 0;
       }
 
       const isBuiltIn = BuiltInOpNames.hasOwnProperty(word);
       first.ctrlSeq = (isBuiltIn ? '\\' : '\\operatorname{') + first.ctrlSeq;
-      last.ctrlSeq += (isBuiltIn ? ' ' : '}');
-      
+      last.ctrlSeq += isBuiltIn ? ' ' : '}';
+
       if (TwoWordOpNames.hasOwnProperty(word)) {
         const lastL = last[L];
         const lastLL = lastL && lastL[L];
@@ -532,7 +536,7 @@ class Letter extends Variable {
         lastLLL.domFrag().addClass('mq-last');
       }
       if (!this.shouldOmitPadding(first[L]))
-      first.domFrag().addClass('mq-first');
+        first.domFrag().addClass('mq-first');
       if (!this.shouldOmitPadding(last[R])) {
         if (last[R] instanceof SupSub) {
           var supsub = last[R] as MQNode; // XXX monkey-patching, but what's the right thing here?
@@ -551,9 +555,7 @@ class Letter extends Variable {
               });
           respace();
         } else {
-          last
-            .domFrag()
-            .toggleClass('mq-last', !(last[R] instanceof Bracket));
+          last.domFrag().toggleClass('mq-last', !(last[R] instanceof Bracket));
         }
       }
     }
@@ -745,28 +747,33 @@ LatexCmds[' '] = LatexCmds.space = class extends VanillaSymbol {
 
   siblingDeleted() {
     // Remove self if there's a neighboring whitespace detected to avoid double spacing.
-    if (this[L] instanceof LatexCmds.space || this[R] instanceof LatexCmds.space) this.remove();
+    if (
+      this[L] instanceof LatexCmds.space ||
+      this[R] instanceof LatexCmds.space
+    )
+      this.remove();
   }
-  
+
   parser() {
     var optWhitespace = Parser.optWhitespace;
     var string = Parser.string;
     var self = this;
 
-    return optWhitespace 
-      .then(string('\\ '))
-      .many()
-      .then(Parser.succeed(self));
+    return optWhitespace.then(string('\\ ')).many().then(Parser.succeed(self));
   }
 
   createLeftOf(cursor: Cursor) {
-    if (cursor[L] instanceof LatexCmds.space || cursor[R] instanceof LatexCmds.space) return;
+    if (
+      cursor[L] instanceof LatexCmds.space ||
+      cursor[R] instanceof LatexCmds.space
+    )
+      return;
     super.createLeftOf(cursor);
   }
-} 
+};
 
 // () =>
-  // new DigitGroupingChar('\\ ', h('span', {}, [h.text(U_NO_BREAK_SPACE)]), ' ');
+// new DigitGroupingChar('\\ ', h('span', {}, [h.text(U_NO_BREAK_SPACE)]), ' ');
 
 LatexCmds['.'] = () =>
   new DigitGroupingChar(
@@ -819,7 +826,10 @@ LatexCmds['%'] = class extends NonSymbolaSymbol {
       .or(super.parser());
   }
 };
-LatexCmds['permil'] = LatexCmds['permille'] = LatexCmds['‰'] = () => new NonSymbolaSymbol('‰', h.entityText('&#8240;'), 'permille');
+LatexCmds['permil'] =
+  LatexCmds['permille'] =
+  LatexCmds['‰'] =
+    () => new NonSymbolaSymbol('‰', h.entityText('&#8240;'), 'permille');
 LatexCmds['#'] = bindVanillaSymbol('\\#', '#', 'hash');
 
 LatexCmds['∥'] = LatexCmds.parallel = bindVanillaSymbol(

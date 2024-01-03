@@ -35,10 +35,12 @@ class ControllerBase {
   textareaSpan: HTMLElement | undefined;
   mathspeakSpan: HTMLElement | undefined;
 
-  doubleSpaceCache: {
-    timeoutId: number;
-    consumeWhitespace: boolean;
-  } | undefined;
+  doubleSpaceCache:
+    | {
+        timeoutId: number;
+        consumeWhitespace: boolean;
+      }
+    | undefined;
 
   constructor(
     root: ControllerRoot,
