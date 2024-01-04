@@ -318,6 +318,7 @@ function getInterface(v: number): MathQuill.v3.API | MathQuill.v1.API {
     mathspeak() {
       return this.__controller.exportMathSpeak();
     }
+    // @ts-ignore
     latex(latex: unknown): typeof this;
     latex(): string;
     latex(latex?: unknown) {
