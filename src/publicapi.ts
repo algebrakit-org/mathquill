@@ -364,12 +364,6 @@ function getInterface(v: number): MathQuill.v3.API | MathQuill.v1.API {
       this.__controller.editablesTextareaEvents();
       return this;
     }
-    // AL-872
-    // focus() {
-    //   this.__controller.getTextareaOrThrow().focus();
-    //   this.__controller.scrollHoriz();
-    //   return this;
-    // }
     focus(args?: FocusOptions) {
       this.__controller.getTextareaOrThrow().focus(args);
       this.__controller.scrollHoriz();

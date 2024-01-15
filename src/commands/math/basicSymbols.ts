@@ -281,47 +281,45 @@ function bindVariable(
 Options.prototype.autoCommands = {
   _maxLength: 0,
 };
-baseOptionProcessors.autoCommands = function (cmds: string | undefined) {
-  if (typeof cmds !== 'string' || !/^[a-z]+(?: [a-z]+)*$/i.test(cmds)) {
-    throw '"' + cmds + '" not a space-delimited list of only letters';
-  }
+baseOptionProcessors.autoCommands = function (
+  cmds: string | { [key: string]: string | 1 } | undefined
+) {
+  var _cmds: { [key: string]: string | 1 };
 
+  if (cmds === undefined) _cmds = {};
   //mslob: this can be removed when old autocommands are removed from akit's code
-  if (typeof cmds === 'string') {
+  else if (typeof cmds === 'string') {
     if (!/^[a-z]+(?: [a-z]+)*$/i.test(cmds)) {
       throw '"' + cmds + '" not a space-delimited list of only letters';
     }
 
-    var _cmds: { [key: string]: 1 } = {};
+    _cmds = {};
     cmds.split(' ').forEach((_cmd) => {
       _cmds[_cmd] = 1;
     });
-
-    return buildDict(_cmds);
+  } else {
+    _cmds = cmds;
   }
 
-  return buildDict(cmds);
+  // Build autodict
+  var list = Object.keys(_cmds);
+  var dict: AutoDict = {};
+  var maxLength = 0;
 
-  function buildDict(cmds: { [key: string]: string | 1 }): AutoDict {
-    var list = Object.keys(cmds);
-    var dict: AutoDict = {};
-    var maxLength = 0;
-
-    for (var i = 0; i < list.length; i += 1) {
-      var cmd = list[i];
-      if (cmd.length < 2) {
-        throw 'autocommand "' + cmd + '" not minimum length of 2';
-      }
-
-      if (LatexCmds[cmd] === OperatorName) {
-        throw '"' + cmd + '" is a built-in operator name';
-      }
-      dict[cmd] = cmds[cmd];
-      maxLength = max(maxLength, cmd.length);
+  for (var i = 0; i < list.length; i += 1) {
+    var cmd = list[i];
+    if (cmd.length < 2) {
+      throw 'autocommand "' + cmd + '" not minimum length of 2';
     }
-    dict._maxLength = maxLength;
-    return dict;
+
+    if (LatexCmds[cmd] === OperatorName) {
+      throw '"' + cmd + '" is a built-in operator name';
+    }
+    dict[cmd] = _cmds[cmd];
+    maxLength = max(maxLength, cmd.length);
   }
+  dict._maxLength = maxLength;
+  return dict;
 };
 
 Options.prototype.quietEmptyDelimiters = {};
