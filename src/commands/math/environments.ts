@@ -3,6 +3,11 @@
 // \end{}. Everything inside those tags will be formatted in a
 // special manner depending on the environment type.
 
+const NO_PAREN_SYM = {
+  html: () => h.text(''),
+  width: 0,
+};
+
 LatexCmds.begin = class extends MathCommand {
   parser() {
     const string = Parser.string;
@@ -54,11 +59,8 @@ class MatrixEnvironment extends EnvironmentNode {
     left: '',
     right: '',
   };
+  // Ensure this is in reverse-column order (so [4, 2, 1])
   vlines: number[] = [];
-
-  reflow() {
-    throw Error('NYI');
-  }
 
   wrappers(): [string, string] {
     if (this.vlines.length > 0 && MathQuill.latexSyntax == 'STANDARD') {
@@ -71,6 +73,147 @@ class MatrixEnvironment extends EnvironmentNode {
     } else {
       return super.wrappers();
     }
+  }
+
+  eachCell(yield_: (node: MatrixCell) => boolean | void | undefined) {
+    return this.eachChild(yield_ as (node: MQNode) => boolean);
+  }
+
+  html() {
+    this.buildDOMView();
+
+    return super.html();
+  }
+
+  buildDOMView() {
+    function parenSymbol(
+      paren?: string,
+      side?: L | R
+    ): {
+      html: ChildNode | DocumentFragment;
+      width: string;
+    } {
+      if (paren) {
+        const symbol = SVG_SYMBOLS[paren as keyof typeof SVG_SYMBOLS];
+        const bracketSide = side === L ? 'mq-bracket-l' : 'mq-bracket-r';
+        return {
+          html: h(
+            'span',
+            {
+              class: `mq-scaled mq-paren ${bracketSide}`,
+              style: `width:${symbol.width}`,
+            },
+            [symbol.html()]
+          ),
+          width: symbol.width,
+        };
+      } else {
+        return {
+          html: h.text(''),
+          width: '0',
+        };
+      }
+    }
+
+    this.domView = new DOMView(this.blocks.length, (blocks) => {
+      let i = 0;
+
+      // Build <tr><td>.. structure from cells
+      let row: number;
+      const table: HTMLElement[][] = [];
+      this.eachCell(function (cell) {
+        if (row !== cell.row) {
+          row = cell.row;
+          table[row] = [];
+        }
+
+        table[row].push(
+          h('td', undefined, [h.block('span', undefined, blocks[i])])
+        );
+        i++;
+      });
+
+      // Inject vertical lines in between cells
+      this.vlines.forEach(function (vIndex) {
+        const _vIndex = Math.max(0, Math.min(table[0].length, vIndex));
+        table.forEach(function (tr) {
+          tr.splice(_vIndex, 0, h('td', { class: 'mq-matrix-vline ' }, []));
+        });
+      });
+
+      const lSymbol = parenSymbol(this.parentheses.left, L);
+      const rSymbol = parenSymbol(this.parentheses.right, R);
+      return h('span', { class: 'mq-matrix mq-non-leaf' }, [
+        lSymbol.html,
+        h(
+          'table',
+          {
+            class: 'mq-non-leaf',
+            style: `margin-left:${lSymbol.width};margin-right:${rSymbol.width};`,
+          },
+          table.map((tr) => {
+            return h('tr', undefined, tr);
+          })
+        ),
+        rSymbol.html,
+      ]);
+    });
+  }
+
+  createBlocks() {
+    this.blocks = [
+      new MatrixCell(0, this),
+      new MatrixCell(0, this),
+      new MatrixCell(1, this),
+      new MatrixCell(1, this),
+    ];
+  }
+
+  latexRecursive(ctx: LatexContext) {
+    this.checkCursorContextOpen(ctx);
+
+    let _latex: string = '',
+      matrixLatex: string = '';
+    let row: number,
+      nCols: number = 0;
+
+    const self = this;
+
+    this.eachChild(function (node) {
+      const cell = node as unknown as MatrixCell;
+      if (typeof row !== 'undefined') {
+        matrixLatex +=
+          row !== cell.row ? self.delimiters.row : self.delimiters.column;
+      }
+      row = cell.row;
+
+      if (row === 0) nCols++;
+      matrixLatex += cell.latex();
+    });
+
+    if (self.vlines.length > 0 && MathQuill.latexSyntax == 'STANDARD') {
+      let alignArg: string = '{';
+      for (let i = 0; i < nCols; i++) {
+        if (self.vlines.indexOf(i) > -1) {
+          alignArg += '|';
+        }
+        alignArg += 'c';
+      }
+      alignArg += '}';
+      _latex = alignArg + matrixLatex;
+    } else {
+      _latex =
+        this.vlines
+          .map(function (line) {
+            return ['[', ']'].join(line + '');
+          })
+          .reverse()
+          .join('') + matrixLatex;
+    }
+
+    ctx.latex += self.wrappers().join(_latex);
+
+    this.checkCursorContextClose(ctx);
   }
 
   parenLatex(paren: string): string {
@@ -141,7 +284,7 @@ class MatrixEnvironment extends EnvironmentNode {
   }
   // Relink all the cells after parsing
   finalizeTree() {
-    const table = this.domFrag().firstElement()?.querySelector('table');
+    const table = this.domFrag().oneElement().querySelector('table');
     if (table)
       DOMFragment.create(table).toggleClass(
         'mq-rows-1',
@@ -232,7 +375,7 @@ class MatrixEnvironment extends EnvironmentNode {
     // set start and end blocks of matrix
     this.setEnds({
       [L]: blocks[0],
-      [R]: blocks[1],
+      [R]: blocks[blocks.length - 1],
     });
   }
 
@@ -297,23 +440,34 @@ class MatrixEnvironment extends EnvironmentNode {
     this.vlines.push(colIndex);
     this.vlines.sort().reverse();
 
-    // this.jQ.find('tr').each(function(_, obj) {
-    //     jQuery(obj)
-    //         .find('td:not(.mq-matrix-vline)')
-    //         .eq(colIndex - 1)
-    //         .after(jQuery('<td class="mq-matrix-vline"></td>'));
-    // });
+    this.domFrag()
+      .oneElement()
+      .querySelectorAll('tr')
+      .forEach((tr) => {
+        const targetFrag = DOMFragment.create(
+          tr.querySelectorAll('td:not(.mq-matrix-vline)').item(colIndex - 1)
+        );
+        const vlineFrag = DOMFragment.create(
+          h('td', { class: 'mq-matrix-vline' }, [])
+        );
+
+        vlineFrag.insertAfter(targetFrag);
+      });
   }
   deleteVline(colIndex: number) {
-    // @ts-expect-error should error while contents are commented
-    const self = this;
     const vIndex = this.vlines.indexOf(colIndex);
 
     pray('there should be a vline to remove at index', vIndex > -1);
-    // this.jQ.find('tr').each(function(_, obj) {
-    //     const removeIndex = self.vlines.length - 1 - vIndex;
-    //     jQuery(obj).find('td.mq-matrix-vline').eq(removeIndex).remove();
-    // });
+    this.domFrag()
+      .oneElement()
+      .querySelectorAll('tr')
+      .forEach((tr) => {
+        DOMFragment.create(
+          tr
+            .querySelectorAll('td.mq-matrix-vline')
+            .item(this.vlines.length - 1 - vIndex)
+        ).remove();
+      });
     this.vlines.splice(vIndex, 1);
   }
   // Deleting a cell will also delete the current row and column if they
@@ -324,7 +478,8 @@ class MatrixEnvironment extends EnvironmentNode {
     let myRow: MatrixCell[] = [];
     let myColumn: MatrixCell[] = [];
     const blocks = this.blocks;
-    let row: number, column: number;
+    let row: number = -1,
+      column: number;
 
     // Create arrays for cells in the current row / column
     this.eachChild(function (cell) {
@@ -349,7 +504,9 @@ class MatrixEnvironment extends EnvironmentNode {
     // only remove the final row or column if it's a 1-by-1 matrix
     if (myColumn.length === 1 && myRow.length === 1 && isEmpty(myRow)) {
       remove(myRow);
-      // this.jQ.find('tr').eq(row).remove();
+      DOMFragment.create(
+        this.domFrag().oneElement().querySelectorAll('tr').item(row)
+      ).remove();
     }
     if (isEmpty(myRow) && myColumn.length > 1) {
       row = rows.indexOf(myRow);
@@ -360,7 +517,9 @@ class MatrixEnvironment extends EnvironmentNode {
       });
       // Dispose of cells and remove <tr>
       remove(myRow);
-      // this.jQ.find('tr').eq(row).remove();
+      DOMFragment.create(
+        this.domFrag().oneElement().querySelectorAll('tr').item(row)
+      ).remove();
     }
     if (isEmpty(myColumn) && myRow.length > 1) {
       // First correct the vline indices
@@ -382,7 +541,6 @@ class MatrixEnvironment extends EnvironmentNode {
       // and remove them.
       this.correctVlines();
     }
-    this.finalizeTree();
 
     return;
 
@@ -403,18 +561,16 @@ class MatrixEnvironment extends EnvironmentNode {
       }
     }
   }
-  addRow(afterCell: MatrixCell) {
+  addRow(afterCell: MatrixCell, ctrlr?: Controller) {
     const previous: MatrixCell[] = [];
     const newCells: MatrixCell[] = [];
     const next: MatrixCell[] = [];
 
-    // const newRow = jQuery('<tr></tr>');
     let row = afterCell.row;
     let columns: number = 0,
       column: number = -1,
       block: MatrixCell;
-    // @ts-ignore
-    let newTd, newVLine;
+    const tds: HTMLElement[] = [];
 
     const self = this;
 
@@ -438,73 +594,65 @@ class MatrixEnvironment extends EnvironmentNode {
 
     // Treat first possible vline (before any cells) as special case
     if (this.vlines.indexOf(0) > -1) {
-      // jQuery('<td class="mq-matrix-vline"></td>')
-      // .appendTo(newRow);
+      tds.push(h('td', { class: 'mq-matrix-vline' }, []));
     }
 
-    // Addd new cells, one for each column
+    // Add new cells, one for each column
     for (let i = 0; i < columns; i += 1) {
       // Add cell routine
       block = new MatrixCell(row + 1);
       block.parent = self;
       newCells.push(block);
 
-      // newTd = jQuery('<tdd></td>');
-      // Create cell <td>s and add to new row
-      // block.jQ = jQuery('<div class="mq-empty">')
-      // .attr(mqBlockId, block.id)
-      // .appendTo(newTd);
+      tds.push(
+        h('td', undefined, [h.block('span', { class: 'mq-empty' }, block)])
+      );
 
-      // newTd.appendTo(newRow);
-
-      // Add vline if needed
+      // Addd vline if needed
       if (this.vlines.indexOf(i + 1) > -1) {
-        // jQuery('<td class="mq-matrix-vline"></td>')
-        //   .appendTo(newRow);
+        tds.push(h('td', { class: 'mq-matrix-vline' }, []));
       }
     }
 
-    // Inject vlines into new row
-    // @ts-expect-error should error while contents are commented
-    this.vlines.forEach(function (vIndex) {
-      // newVline = jQuery('<td class="mq-matrix-vline"></td>');
-      // jquery magic, insert in right place
-    });
+    const targetTrFrag = DOMFragment.create(
+      this.domFrag().oneElement().querySelectorAll('tr').item(row)
+    );
+    const newTrFrag = DOMFragment.create(h('tr', undefined, tds));
+    newTrFrag.insertAfter(targetTrFrag);
 
     // Insert the new row
-    // this.jQ.find('tr').eq(row).after(newRow);
     this.blocks = previous.concat(newCells, next);
+    this.finalizeTree();
+    ctrlr?.moveDown();
 
-    pray('column index is positive', column > -1);
+    this.bubble((node) => {
+      node.reflow();
+      return undefined;
+    });
     return newCells[column];
   }
-  addColumn(afterCell: MatrixCell) {
+  addColumn(afterCell: MatrixCell, ctrlr?: Controller) {
     const rows: MatrixCell[][] = [];
     const newCells: MatrixCell[] = [];
     let column: number = -1;
-    let block: MatrixCell;
 
     const self = this;
 
     // Build rows array and find new column index
     this.eachChild(function (cell) {
-      pray('child is not a matrix cell', cell instanceof MatrixCell);
+      pray('child is a matrix cell', cell instanceof MatrixCell);
       rows[cell.row] = rows[cell.row] || [];
       rows[cell.row].push(cell);
       if (cell === afterCell) column = rows[cell.row].length;
     });
 
-    // Addd new cells, one for each row
+    // Add new cells, one for each row
     for (let i = 0; i < rows.length; i += 1) {
       // Add cell routine
-      block = new MatrixCell(i);
+      const block = new MatrixCell(i);
       block.parent = self;
       newCells.push(block);
       rows[i].splice(column, 0, block);
-
-      //   block.jQ = jQuery('<div class="mq-empty">')
-      //     .attr(mqBlockId, block.id)
-      //     .appendTo(jQuery('<td></td>'));
     }
 
     pray('column index is positive', column > -1);
@@ -520,12 +668,29 @@ class MatrixEnvironment extends EnvironmentNode {
     }
 
     // Add cell <td> elements in correct positions
-    // this.jQ.find('tr').each(function(i) {
-    //   jQuery(this).find('td:not(.mq-matrix-vline').eq(column - 1).after(rows[i][column].jQ.parent());
-    // })
+    this.domFrag()
+      .oneElement()
+      .querySelectorAll('tr')
+      .forEach((trEl, i) => {
+        const tdSiblingEl = trEl
+          .querySelectorAll('td:not(.mq-matrix-vline)')
+          .item(column - 1);
+        const newBlockEl = h('td', undefined, [
+          h.block('span', { class: 'mq-empty' }, newCells[i]),
+        ]);
+        const newBlockFrag = DOMFragment.create(newBlockEl);
+        newBlockFrag.insDirOf(R, DOMFragment.create(tdSiblingEl));
+      });
 
     // @ts-ignore Flatten the rows array-of-arrays
     this.blocks = [].concat.apply([], rows);
+    this.finalizeTree();
+    ctrlr?.moveRight();
+
+    this.bubble(function (node: MQNode) {
+      node.reflow();
+      return undefined;
+    });
     return newCells[afterCell.row];
   }
   toggleVline(afterCell: MatrixCell) {
@@ -551,11 +716,7 @@ class MatrixEnvironment extends EnvironmentNode {
       nCols++;
     }
 
-    if (
-      column >= 0 &&
-      column < nCols
-      // && this.vlines.indexOf(column) < 0
-    ) {
+    if (column >= 0 && column < nCols) {
       const vIndex = this.vlines.indexOf(column);
       if (vIndex < 0) {
         // toggle on
@@ -566,6 +727,11 @@ class MatrixEnvironment extends EnvironmentNode {
       }
     }
 
+    this.bubble((node) => {
+      node.reflow();
+      return undefined;
+    });
+
     return returnCell;
   }
   backspace(
@@ -575,7 +741,7 @@ class MatrixEnvironment extends EnvironmentNode {
     finalDeleteCallback: () => void
   ) {
     const oppDir = dir === L ? R : L;
-    let dirwards: MatrixCell | 0 = cell.getEnd(dir) as MatrixCell | 0;
+    let dirwards: MatrixCell = cell[dir] as MatrixCell;
     if (cell.isEmpty()) {
       this.deleteCell(cell);
       while (
@@ -583,14 +749,13 @@ class MatrixEnvironment extends EnvironmentNode {
         dirwards.getEnd(dir) &&
         this.blocks.indexOf(dirwards) === -1
       ) {
-        dirwards = dirwards.getEnd(dir) as MatrixCell | 0;
+        dirwards = dirwards[dir] as MatrixCell;
       }
       if (dirwards) {
         cursor.insAtDirEnd(oppDir, dirwards);
       }
       if (this.blocks.length === 0) {
         finalDeleteCallback();
-        this.finalizeTree();
       }
       this.bubble(function (node: MQNode) {
         node.reflow();
@@ -626,14 +791,14 @@ class MatrixCell extends MathBlock {
         return this.parent.toggleVline(this);
       case 'Shift-Spacebar':
         e.preventDefault();
-        return this.parent.addColumn(this);
+        return this.parent.addColumn(this, ctrlr);
       case 'Shift-Enter':
         e.preventDefault();
-        return this.parent.addRow(this);
+        return this.parent.addRow(this, ctrlr);
     }
     return super.keystroke(key, e, ctrlr);
   }
-  deleteOurOf(dir: L | R, cursor: Cursor) {
+  deleteOutOf(dir: L | R, cursor: Cursor) {
     const _deleteOutOf = super.deleteOutOf;
     this.parent.backspace(this, dir, cursor, function () {
       // called when last cell gets deleted
@@ -645,13 +810,13 @@ class MatrixCell extends MathBlock {
     // Step out of the matrix if we've moved apst an edge column
     const oppDir = dir === L ? R : L;
     if (!atExitPoint && this[dir])
-      cursor.insAtDirEnd(oppDir, this.getEnd(dir) as MQNode);
+      cursor.insAtDirEnd(oppDir, this[dir] as MQNode);
     else cursor.insDirOf(dir, this.parent);
   }
   // This should be super_.remove() with the this.jQ.remove(); replaced by
   // removing its parent
   remove() {
-    // this.jQ.parent().remove();
+    this.domFrag().parent().remove();
     return this.disown();
   }
 }

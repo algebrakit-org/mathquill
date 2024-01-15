@@ -18,6 +18,23 @@ var SVG_SYMBOLS = {
         h('path', { d: 'M4.4 0 L4.4 54 L5.6 54 L5.6 0' }),
       ]),
   },
+  '&#8214;': {
+    width: '.55em',
+    html: () =>
+      h(
+        'svg',
+        {
+          preserveAspectRatio: 'none',
+          'shape-rendering': 'crispedges',
+          viewBox: '0 0 11 54',
+        },
+        [
+          h('path', {
+            d: 'M3 0 L3 54 L4.2 54 L4.2 0 M6.8 0 L6.8 54 L8 54 L8 0',
+          }),
+        ]
+      ),
+  },
   '[': {
     width: '.55em',
     html: () =>

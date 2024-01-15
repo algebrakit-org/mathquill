@@ -149,6 +149,15 @@
     <script type="text/javascript" src="../build/mathquill.js"></script>
     <script type="text/javascript">
       MQ = MathQuill.getInterface(MathQuill.getInterface.MAX);
+      MQ.config({
+        // autoCommands: 'pi sqrt',
+        // restrictMismatchedBrackets: true,
+        // typingAsteriskWritesTimesSymbol: true,
+        // typingSlashWritesDivisionSymbol: true,
+        // typingColonWritesDivisionSymbol: true,
+        // typingXWritesTimesSymbol: true,
+        spaceBehavesLikeTab: true,
+      });
 
       //on document ready, mathquill-ify all `<tag class="mathquill-*">latex</tag>`
       //elements according to their CSS class.
@@ -205,7 +214,10 @@
         latexMath.config({
           handlers: {
             edit: function () {
+              const oldSyntax = MathQuill.latexSyntax;
+              MathQuill.latexSyntax = 'ALGEBRAKIT';
               var latex = latexMath.latex();
+              MathQuill.latexSyntax = oldSyntax;
               latexSource.val(latex);
               //        location.hash = '#'+latex; //extremely performance-crippling in Chrome for some reason
               htmlSource.text(printTree(latexMath.html()));
