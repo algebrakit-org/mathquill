@@ -784,16 +784,16 @@ class MatrixCell extends MathBlock {
       }
     }
   }
-  keystroke(key: string, e: KeyboardEvent, ctrlr: Controller) {
+  keystroke(key: string, e: KeyboardEvent | undefined, ctrlr: Controller) {
     switch (key) {
       case 'Ctrl-Alt-Spacebar':
-        e.preventDefault();
+        e?.preventDefault();
         return this.parent.toggleVline(this);
       case 'Shift-Spacebar':
-        e.preventDefault();
+        e?.preventDefault();
         return this.parent.addColumn(this, ctrlr);
       case 'Shift-Enter':
-        e.preventDefault();
+        e?.preventDefault();
         return this.parent.addRow(this, ctrlr);
     }
     return super.keystroke(key, e, ctrlr);
