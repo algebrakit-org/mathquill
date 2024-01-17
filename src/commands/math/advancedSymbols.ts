@@ -591,14 +591,21 @@ LatexCmds.rarr = LatexCmds.rightarrow = bindVanillaSymbol(
   '&rarr;',
   'right arrow'
 );
+LatexCmds.nrarr = LatexCmds.notrightarrow = bindVanillaSymbol(
+  '\\not\\rightarrow ',
+  '&rarr;\u0338',
+  'not right arrow'
+);
 
 LatexCmds.implies = bindBinaryOperator('\\Rightarrow ', '&rArr;', 'implies');
+LatexCmds.nimplies = bindBinaryOperator('\\not\\Rightarrow ', '&rArr;\u0338');
 
 LatexCmds.rArr = LatexCmds.Rightarrow = bindVanillaSymbol(
   '\\Rightarrow ',
   '&rArr;',
   'right arrow'
 );
+LatexCmds.nrArr = bindVanillaSymbol('\\not\\Rightarrow ', '&rArr;\u0338');
 
 LatexCmds.gets = bindBinaryOperator('\\gets ', '&larr;', 'gets');
 
@@ -606,6 +613,10 @@ LatexCmds.larr = LatexCmds.leftarrow = bindVanillaSymbol(
   '\\leftarrow ',
   '&larr;',
   'left arrow'
+);
+LatexCmds.nlarr = LatexCmds.notleftarrow = bindVanillaSymbol(
+  '\\not\\leftarrow ',
+  '&larr;\u0338'
 );
 
 LatexCmds.impliedby = bindBinaryOperator(
@@ -618,6 +629,10 @@ LatexCmds.lArr = LatexCmds.Leftarrow = bindVanillaSymbol(
   '\\Leftarrow ',
   '&lArr;',
   'left arrow'
+);
+LatexCmds.nlArr = LatexCmds.notLeftarrow = bindVanillaSymbol(
+  '\\not\\Leftarrow ',
+  '&lArr;\u0338'
 );
 
 LatexCmds.harr =
