@@ -1139,10 +1139,10 @@ var LiveFraction =
 const MixedFraction = (LatexCmds.MixedFraction = class extends Fraction {
   ctrlSeq = '\\MixedFraction';
   domView = new DOMView(3, (blocks) =>
-    h('span', {}, [
+    h('span', { class: 'mq-non-leaf' }, [
       h.block('span', { class: 'mq-non-leaf' }, blocks[0]),
       h('span', { class: 'mq-fraction mq-non-leaf' }, [
-        h.block('span', { class: 'mq-numberator' }, blocks[1]),
+        h.block('span', { class: 'mq-numerator' }, blocks[1]),
         h.block('span', { class: 'mq-denominator' }, blocks[2]),
         h('span', { style: 'display:inline-block;width:0;' }, [
           h.text(U_ZERO_WIDTH_SPACE),
@@ -1154,30 +1154,21 @@ const MixedFraction = (LatexCmds.MixedFraction = class extends Fraction {
   latexRecursive(ctx: LatexContext) {
     this.checkCursorContextOpen(ctx);
 
-    ctx.latex += '{';
+    if (ctx.latex.charAt(ctx.latex.length) != ' ' && ctx.latex.length > 0) {
+      ctx.latex += ' ';
+    }
 
-    const blockLatex = this.blocks!.map((block) => {
-      const blockCtx: LatexContext = {
-        latex: '',
-        startIndex: -1,
-        endIndex: -1,
-      };
-
-      block.latexRecursive(blockCtx);
-      if (blockCtx.startIndex === blockCtx.endIndex) {
-        blockCtx.latex += ' ';
-      }
-
-      return blockCtx.latex;
-    });
-
-    ctx.latex +=
-      blockLatex[0] +
-      '\\ \\frac{' +
-      blockLatex[1] +
-      '}{' +
-      blockLatex[2] +
-      '}}';
+    if (!this.blocks) {
+      ctx.latex += '\\frac{ }{ }';
+    } else {
+      ctx.latex +=
+        this.blocks[0].latex() +
+        '\\frac{' +
+        this.blocks[1].latex() +
+        '}{' +
+        this.blocks[2].latex() +
+        '}';
+    }
 
     this.checkCursorContextClose(ctx);
   }
