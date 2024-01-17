@@ -9,9 +9,6 @@ const L: L = -1;
 const R: R = 1;
 type Direction = L | R;
 
-var min = Math.min;
-var max = Math.max;
-
 function noop() {}
 
 function walkUpAsFarAsPossible(node: NodeRef | undefined) {

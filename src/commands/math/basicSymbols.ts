@@ -316,7 +316,7 @@ baseOptionProcessors.autoCommands = function (
       throw '"' + cmd + '" is a built-in operator name';
     }
     dict[cmd] = _cmds[cmd];
-    maxLength = max(maxLength, cmd.length);
+    maxLength = Math.max(maxLength, cmd.length);
   }
   dict._maxLength = maxLength;
   return dict;
@@ -347,7 +347,7 @@ baseOptionProcessors.autoParenthesizedFunctions = function (cmds) {
       throw 'autocommand "' + cmd + '" not minimum length of 2';
     }
     dict[cmd] = 1;
-    maxLength = max(maxLength, cmd.length);
+    maxLength = Math.max(maxLength, cmd.length);
   }
   dict._maxLength = maxLength;
   return dict;
@@ -645,7 +645,7 @@ baseOptionProcessors.autoOperatorNames = function (cmds) {
     if (cmd.indexOf('|') < 0) {
       // normal auto operator
       dict[cmd] = cmd;
-      maxLength = max(maxLength, cmd.length);
+      maxLength = Math.max(maxLength, cmd.length);
     } else {
       // this item has a speech-friendly alternative
       var cmdArray = cmd.split('|');
@@ -656,7 +656,7 @@ baseOptionProcessors.autoOperatorNames = function (cmds) {
         throw '"' + cmd[0] + '" not minimum length of 2';
       }
       dict[cmdArray[0]] = cmdArray[1].replace(/-/g, ' '); // convert dashes to spaces for the sake of speech
-      maxLength = max(maxLength, cmdArray[0].length);
+      maxLength = Math.max(maxLength, cmdArray[0].length);
     }
   }
   dict._maxLength = maxLength;
