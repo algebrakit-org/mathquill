@@ -755,7 +755,7 @@ class MathBlock extends MathElement {
         i: number = 0;
       while (l instanceof Letter && l.ctrlSeq === l.letter && i < maxLength) {
         str = l.letter + str;
-        l = l.getEnd(L);
+        l = l[L];
         i += 1;
       }
       // check for an autocommand, check only longest string of letters (so not api --> a\pi)
@@ -763,10 +763,10 @@ class MathBlock extends MathElement {
         for (
           i = 1, l = cursor[L];
           i < str.length;
-          i += 1, l = (l as MQNode)?.getEnd(L)
+          i += 1, l = (l as MQNode)[L]
         );
         new Fragment(l, cursor[L]).remove();
-        cursor[L] = l ? l.getEnd(L) : 0;
+        cursor[L] = l ? l[L] : 0;
 
         let cmd = autoCmds[str];
         if (cmd == 1) cmd = str; // mslob: can be removed once old autocmds implementation is gone

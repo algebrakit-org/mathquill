@@ -444,7 +444,8 @@ class Letter extends Variable {
   createLeftOf(cursor: Cursor) {
     super.createLeftOf(cursor);
 
-    this.checkAutoCmds(cursor);
+    // AL-1304 don't greedily parse auto operators, wait for non-letter key to process commands.
+    // this.checkAutoCmds(cursor);
     this.autoParenthesize(cursor);
   }
   italicize(bool: boolean) {
