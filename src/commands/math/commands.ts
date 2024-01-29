@@ -1886,7 +1886,7 @@ class MathFieldNode extends MathCommand {
   name: string;
   ctrlSeq = '\\MathQuillMathField';
   domView = new DOMView(1, (blocks) => {
-    return h('span', { class: 'mq-editable-field' }, [
+    return h('span', { class: 'akit-editable-field' }, [
       h.block(
         'span',
         { class: 'mq-root-block', 'aria-hidden': 'true' },
