@@ -13,6 +13,7 @@ MathQuill is resuming active development and we're committed to getting things r
 ## Getting Started
 
 MathQuill has a simple interface. This brief example creates a MathQuill element and renders, then reads a given input:
+
 ```javascript
 var htmlElement = document.getElementById('some_id');
 var config = {
@@ -43,10 +44,12 @@ public GitHub forks. (Other ways to publicize modifications are also fine, as
 are private use modifications. See also: [MPL 2.0 FAQ](https://www.mozilla.org/en-US/MPL/2.0/FAQ/))
 
 ## Export to AlgebraKiT Widgets
+
 To export the new version of mathquill to the algebrakit widgets:
+
 - make clean
 - make all
 - copy the following files to widgets/source/dist/mathquill:
-    - mathquill.css
-    - mathquill.js
-    - mathquill.min.js
+  - mathquill.css
+  - mathquill.js
+  - mathquill.min.js

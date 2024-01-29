@@ -1,53 +1,54 @@
 .mq-math-mode {
+  .mq-matrix {
+    position: relative;
+    
+    // font-size: 90%;
+    vertical-align: middle;
+    margin-left: 0.1em;
+    margin-right: 0.1em;
 
-    .mq-matrix {
-        // font-size: 90%;
+    > .mq-paren {
+      -webkit-transform-origin: center 0.06em;
+      -moz-transform-origin: center 0.06em;
+      -ms-transform-origin: center 0.06em;
+      -o-transform-origin: center 0.06em;
+      transform-origin: center 0.06em;
+    }
+
+    table {
+      font-family: inherit;
+      width: auto;
+      border-bottom: none;
+      border-collapse: collapse;
+      &.mq-rows-1 {
+        /* better alignment when there's just one row */
         vertical-align: middle;
-        margin-left: 0.1em;
-        margin-right: 0.1em;
+        margin-bottom: 1px;
+      }
+    }
 
-        > .mq-paren {
-          -webkit-transform-origin: center .06em;
-          -moz-transform-origin: center .06em;
-          -ms-transform-origin: center .06em;
-          -o-transform-origin: center .06em;
-          transform-origin: center .06em;
-        }
-    
-        table {
-          font-family: inherit;
-          width: auto;
-          border-bottom: none;
-          border-collapse: collapse;
-          &.mq-rows-1 { /* better alignment when there's just one row */
-            vertical-align: middle;
-            margin-bottom: 1px;
-          }
-        }
-    
-        td {
-          font-family: inherit;
-          border: none;
-          width: auto; /* defensive resets */
-          text-align: center;
-          vertical-align: baseline;
-          padding: 3px;
+    td {
+      font-family: inherit;
+      border: none;
+      width: auto; /* defensive resets */
+      text-align: center;
+      vertical-align: baseline;
+      padding: 3px;
 
-          &.mq-matrix-vline {
-            width: 0;
-            padding: 0;
-            border-right: 1px solid black;
+      &.mq-matrix-vline {
+        width: 0;
+        padding: 0;
+        border-right: 1px solid black;
 
-            // should be within two 'regular' td matrix cells, so should always 
-            // get a padding-left. Additional offset of 3px, so it aligns with 
-            // the '& .td' 6px (3px + 3px) padding.
-            padding-left: 3px;
+        // should be within two 'regular' td matrix cells, so should always
+        // get a padding-left. Additional offset of 3px, so it aligns with
+        // the '& .td' 6px (3px + 3px) padding.
+        padding-left: 3px;
 
-            & + td {
-                padding-left: 6px;
-            }
-          }
+        & + td {
+          padding-left: 6px;
         }
       }
-
+    }
+  }
 }
