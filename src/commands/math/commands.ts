@@ -54,7 +54,7 @@ var SVG_SYMBOLS = {
     html: () =>
       h('svg', { preserveAspectRatio: 'none', viewBox: '3 0 106 186' }, [
         h('path', {
-          d: 'M85 0 A61 101 0 0 0 85 186 L75 186 A75 101 0 0 1 75 0',
+          d: 'M80 0 A61 101 0 0 0 80 186 L75 186 A75 101 0 0 1 75 0',
         }),
       ]),
   },
@@ -63,7 +63,7 @@ var SVG_SYMBOLS = {
     html: () =>
       h('svg', { preserveAspectRatio: 'none', viewBox: '3 0 106 186' }, [
         h('path', {
-          d: 'M24 0 A61 101 0 0 1 24 186 L34 186 A75 101 0 0 0 34 0',
+          d: 'M24 0 A61 101 0 0 1 24 186 L29 186 A75 101 0 0 0 29 0',
         }),
       ]),
   },
