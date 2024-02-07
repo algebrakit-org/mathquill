@@ -444,7 +444,8 @@ class Letter extends Variable {
   createLeftOf(cursor: Cursor) {
     super.createLeftOf(cursor);
 
-    this.checkAutoCmds(cursor);
+    // AL-1304 don't greedily parse auto operators, wait for non-letter key to process commands.
+    // this.checkAutoCmds(cursor);
     this.autoParenthesize(cursor);
   }
   italicize(bool: boolean) {
@@ -886,6 +887,9 @@ LatexCmds.epsiv = LatexCmds.varepsilon = bindVariable(
   'epsilon'
 );
 
+LatexCmds.pi = LatexCmds['π'] = () =>
+  new VanillaSymbol('\\pi ', h.entityText('&pi;'), 'pi');
+
 LatexCmds.piv = LatexCmds.varpi = bindVariable('\\varpi ', '&piv;', 'piv'); //W3C/Unicode and Elsevier and 9573-13 //AMS and LaTeX
 
 LatexCmds.sigmaf = //W3C/Unicode
@@ -921,8 +925,6 @@ LatexCmds.kappav = LatexCmds.varkappa = bindVariable(
 LatexCmds.rhov = LatexCmds.varrho = bindVariable('\\varrho ', '&#1009;', 'rho'); //Elsevier and 9573-13 //AMS and LaTeX
 
 //Greek constants, look best in non-italicized Times New Roman
-LatexCmds.pi = LatexCmds['π'] = () =>
-  new NonSymbolaSymbol('\\pi ', h.entityText('&pi;'), 'pi');
 LatexCmds.lambda = () =>
   new NonSymbolaSymbol('\\lambda ', h.entityText('&lambda;'), 'lambda');
 

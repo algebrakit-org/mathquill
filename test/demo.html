@@ -6,6 +6,13 @@
 
     <title>MathQuill Demo</title>
 
+    <style>
+      @font-face {
+        font-family: Symbola;
+        src: url('../src/fonts/Symbola-basic.woff') format('woff');
+      }
+    </style>
+
     <link rel="stylesheet" type="text/css" href="support/home.css" />
     <link rel="stylesheet" type="text/css" href="../build/mathquill.css" />
 
@@ -150,7 +157,7 @@
     <script type="text/javascript">
       MQ = MathQuill.getInterface(MathQuill.getInterface.MAX);
       MQ.config({
-        // autoCommands: 'pi sqrt',
+        autoCommands: 'pi sqrt',
         // restrictMismatchedBrackets: true,
         // typingAsteriskWritesTimesSymbol: true,
         // typingSlashWritesDivisionSymbol: true,

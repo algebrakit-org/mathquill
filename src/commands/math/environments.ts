@@ -261,15 +261,15 @@ class MatrixEnvironment extends EnvironmentNode {
           .then(function (items) {
             let blocks: MatrixCell[] = [];
             let row = 0;
-            const selfBlocks: MatrixCell[] = (self.blocks = []);
+            self.blocks = [];
 
             function addCell() {
-              selfBlocks.push(new MatrixCell(row, self, blocks));
+              self.blocks.push(new MatrixCell(row, self, blocks));
               blocks = [];
             }
 
             for (let i = 0; i < items.length; i += 1) {
-              if (items[i] instanceof MatrixCell) {
+              if (items[i] instanceof MathBlock) {
                 blocks.push(items[i] as MatrixCell);
               } else {
                 addCell();
