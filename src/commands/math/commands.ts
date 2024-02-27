@@ -1516,7 +1516,11 @@ class Bracket extends DelimsNode {
         OPP_BRACKS[
           this.sides[this.side as Direction].ch as keyof typeof BRACKET_NAMES
         ] === node.sides[node.side].ch ||
-        { '(': ']', '[': ')' }[this.sides[L].ch] === node.sides[R].ch) &&
+        { '\\left(': '\\right]', '\\left[': '\\right)' }[this.sides[L].ch] ===
+          node.sides[R].ch ||
+        { '\\left\\langle': '\\right]', '\\left[': '\\right\\rangle' }[
+          this.sides[L].ch
+        ] === node.sides[R].ch) &&
       node
     );
   }

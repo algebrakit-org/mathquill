@@ -162,26 +162,26 @@ function bindIntervalCommand(
 // Dutch notations for intervals
 LatexCmds.IntervalNlExEx = bindIntervalCommand(
   '\\IntervalNlExEx',
-  '&lang;',
-  '&rang;',
+  '\\left&lang;',
+  '\\right&rang;',
   ';'
 );
 LatexCmds.IntervalNlExIn = bindIntervalCommand(
   '\\IntervalNlExIn',
-  '&lang;',
-  ']',
+  '\\left&lang;',
+  '\\right]',
   ';'
 );
 LatexCmds.IntervalNlInEx = bindIntervalCommand(
   '\\IntervalNlInEx',
-  '[',
-  '&rang;',
+  '\\left[',
+  '\\right&rang;',
   ';'
 );
 LatexCmds.IntervalNlInIn = bindIntervalCommand(
   '\\IntervalNlInIn',
-  '[',
-  ']',
+  '\\left[',
+  '\\right]',
   ';'
 );
 
@@ -213,26 +213,26 @@ LatexCmds.IntervalBeInIn = bindIntervalCommand(
 // English notations for intervals
 LatexCmds.IntervalEnExEx = bindIntervalCommand(
   '\\IntervalEnExEx',
-  '(',
-  ')',
+  '\\left(',
+  '\\right)',
   ','
 );
 LatexCmds.IntervalEnExIn = bindIntervalCommand(
   '\\IntervalEnExIn',
-  '(',
-  ']',
+  '\\left(',
+  '\\right]',
   ','
 );
 LatexCmds.IntervalEnInEx = bindIntervalCommand(
   '\\IntervalEnInEx',
-  '[',
-  ')',
+  '\\left[',
+  '\\right)',
   ','
 );
 LatexCmds.IntervalEnInIn = bindIntervalCommand(
   '\\IntervalEnInIn',
-  '[',
-  ']',
+  '\\left[',
+  '\\right]',
   ','
 );
 
