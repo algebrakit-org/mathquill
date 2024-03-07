@@ -175,7 +175,7 @@ LatexCmds.IntervalNlExIn = bindIntervalCommand(
 LatexCmds.IntervalNlInEx = bindIntervalCommand(
   '\\IntervalNlInEx',
   '[',
-  't&rang;',
+  '&rang;',
   ';'
 );
 LatexCmds.IntervalNlInIn = bindIntervalCommand(

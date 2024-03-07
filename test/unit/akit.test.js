@@ -35,14 +35,14 @@ suite('akit', function () {
   });
 
   test('angle brackets match with square brackets', function () {
-    mq.typedText('\\langle ]');
-    assert.equal(mostRecentlyReportedLatex, 'leftlangle\right]');
-    assert.equal(mq.latex(), 'leftlangle\right]');
+    mq.typedText('\\langle]');
+    assert.equal(mostRecentlyReportedLatex, '\\left\\langle\\right]');
+    assert.equal(mq.latex(), '\\left\\langle\\right]');
     mq.latex('');
 
     mq.typedText('[\\rangle ');
-    assert.equal(mostRecentlyReportedLatex, 'left[\right\rangle');
-    assert.equal(mq.latex(), 'left[\right\rangle');
+    assert.equal(mostRecentlyReportedLatex, '\\left[\\right\\rangle\\ ');
+    assert.equal(mq.latex(), '\\left[\\right\\rangle\\ ');
 
     mq.latex('');
   });

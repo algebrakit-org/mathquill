@@ -1706,6 +1706,12 @@ class Bracket extends DelimsNode {
     this.getEnd(L).deleteOutOf = function (dir: Direction, cursor: Cursor) {
       (this.parent as Bracket).deleteSide(dir, true, cursor);
     };
+    // FIXME HACK: after initial creation/insertion, finalizeTree would only be
+    // called if the paren is selected and replaced, e.g. by LiveFraction
+    this.finalizeTree = function () {
+      this.delimFrags[this.side === L ? R : L].removeClass('mq-ghost');
+      this.side = 0;
+    };
   }
   siblingCreated(_opts: CursorOptions, dir: Direction) {
     // if something typed between ghost and far
