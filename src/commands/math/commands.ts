@@ -1516,7 +1516,9 @@ class Bracket extends DelimsNode {
         OPP_BRACKS[
           this.sides[this.side as Direction].ch as keyof typeof BRACKET_NAMES
         ] === node.sides[node.side].ch ||
-        { '(': ']', '[': ')' }[this.sides[L].ch] === node.sides[R].ch) &&
+        { '(': ']', '[': ')' }[this.sides[L].ch] === node.sides[R].ch ||
+        { '&lang;': ']', '[': '&rang;' }[this.sides[L].ch] ===
+          node.sides[R].ch) &&
       node
     );
   }
@@ -1706,7 +1708,7 @@ class Bracket extends DelimsNode {
     };
     // FIXME HACK: after initial creation/insertion, finalizeTree would only be
     // called if the paren is selected and replaced, e.g. by LiveFraction
-    this.finalizeTree = this.intentionalBlur = function () {
+    this.finalizeTree = function () {
       this.delimFrags[this.side === L ? R : L].removeClass('mq-ghost');
       this.side = 0;
     };
@@ -1745,8 +1747,6 @@ var OPP_BRACKS = {
 };
 
 var BRACKET_NAMES = {
-  '&lang;': 'angle-bracket',
-  '&rang;': 'angle-bracket',
   '|': 'pipe',
 };
 
@@ -1765,12 +1765,15 @@ function bindCharBracketPair(
   ] = name;
 }
 bindCharBracketPair('(', '', 'parenthesis');
-// bindCharBracketPair('[', '', 'bracket');
+bindCharBracketPair('[', '', 'bracket');
 bindCharBracketPair('{', '\\{', 'brace');
-// LatexCmds.langle = () =>
-// new Bracket(L, '&lang;', '&rang;', '\\langle ', '\\rangle ');
-// LatexCmds.rangle = () =>
-// new Bracket(R, '&lang;', '&rang;', '\\langle ', '\\rangle ');
+bindCharBracketPair('&lang;', '\\langle ', 'angle');
+
+LatexCmds.langle = () =>
+  new Bracket(L, '&lang;', '&rang;', '\\langle ', '\\rangle ');
+LatexCmds.rangle = () =>
+  new Bracket(R, '&lang;', '&rang;', '\\langle ', '\\rangle ');
+
 CharCmds['|'] = () => new Bracket(L, '|', '|', '|', '|');
 // LatexCmds.lVert = () =>
 //   new Bracket(L, '&#8741;', '&#8741;', '\\lVert ', '\\rVert ');

@@ -287,9 +287,6 @@ LatexCmds.diff = class extends VanillaSymbol {
   }
 };
 
-LatexCmds.langle = bindVanillaSymbol('\\langle ', '&#9001;');
-LatexCmds.rangle = bindVanillaSymbol('\\rangle ', '&#9002;');
-
 // Custom commands for language-specific solution tags
 class AkitTextBlock extends BlockSymbol {
   constructor(ctrlSeq: string, symbolText: string) {

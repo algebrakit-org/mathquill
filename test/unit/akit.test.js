@@ -33,4 +33,17 @@ suite('akit', function () {
 
     mq.latex('');
   });
+
+  test('angle brackets match with square brackets', function () {
+    mq.typedText('\\langle]');
+    assert.equal(mostRecentlyReportedLatex, '\\left\\langle\\right]');
+    assert.equal(mq.latex(), '\\left\\langle\\right]');
+    mq.latex('');
+
+    mq.typedText('[\\rangle ');
+    assert.equal(mostRecentlyReportedLatex, '\\left[\\right\\rangle\\ ');
+    assert.equal(mq.latex(), '\\left[\\right\\rangle\\ ');
+
+    mq.latex('');
+  });
 });
