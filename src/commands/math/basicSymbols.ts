@@ -1365,4 +1365,4 @@ baseOptionProcessors.interpretTildeAsSim = function (val: boolean | undefined) {
 // #6401 make ':' a BinaryOperator to correctly render spacing. Note that this
 // way of rendering should get overruled by the 'typingColonWritesDivisionSymbol'
 // option, applied in MathBlock _chToCmd function.
-CharCmds[':'] = bindBinaryOperator(':', ':', ':');
+LatexCmds[':'] = bindBinaryOperator(':', ':', ':');
