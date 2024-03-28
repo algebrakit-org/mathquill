@@ -734,12 +734,9 @@ class MathBlock extends MathElement {
     if (seln) cmd?.replaces(seln);
     if (!cursor.isTooDeep()) {
       cmd?.createLeftOf(cursor.show());
-      // special-case the slash so that fractions are voiced while typing
-      if (ch === '/') {
-        cursor.controller.aria.alert('over');
-      } else {
-        cursor.controller.aria.alert(cmd?.mathspeak({ createdLeftOf: cursor }));
-      }
+
+      //Read out the resulting expression after the new character is added.
+      cursor.controller.aria.alert(cursor.controller.root.mathspeak().trim());
     }
   }
 
