@@ -318,7 +318,10 @@ LatexCmds.TrueSolutionNl = bindAkitTextBlock('\\TrueSolutionNl', 'waar');
 LatexCmds.TrueSolutionEn = bindAkitTextBlock('\\TrueSolutionEn', 'true');
 LatexCmds.TrueSolutionFr = bindAkitTextBlock('\\TrueSolutionFr', 'vrai');
 LatexCmds.TrueSolutionDe = bindAkitTextBlock('\\TrueSolutionDe', 'wahr');
-LatexCmds.TrueSolutionLt = bindAkitTextBlock('\\TrueSolutionLt', 'teisingai');
+LatexCmds.TrueSolutionLt = bindAkitTextBlock(
+  '\\TrueSolutionLt',
+  'sprendiniai visi skaičiai'
+);
 
 class Underset extends MathCommand {
   ctrlSeq = '\\underset';
