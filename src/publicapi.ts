@@ -476,6 +476,9 @@ function getInterface(v: number): MathQuill.v3.API | MathQuill.v1.API {
       this.__controller.cursor.options.ignoreNextMousedown = fn;
       return this;
     }
+    ariaAlert(alert: string) {
+      return this.__controller.aria.alert(alert);
+    }
   }
 
   var APIClasses: APIClasses = {
