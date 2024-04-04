@@ -46,4 +46,25 @@ suite('akit', function () {
 
     mq.latex('');
   });
+
+  test('ContainerHasFocus pierces Shadow DOM', function () {
+    const shadowDiv = document.createElement('div');
+    const shadowRoot = shadowDiv.attachShadow({ mode: 'open' });
+
+    const mqSpan = document.createElement('span');
+    mq = MQ.MathField(mqSpan, {
+      autoCommands: 'pi',
+      handlers: {
+        edit: function () {
+          mostRecentlyReportedLatex = mq.latex();
+        },
+      },
+    });
+
+    shadowRoot.appendChild(mqSpan);
+    document.getElementById('mock').appendChild(shadowDiv);
+
+    mq.focus();
+    assert.equal(mq.__controller.containerHasFocus(), true);
+  });
 });
