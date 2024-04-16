@@ -159,9 +159,29 @@ class ControllerBase {
     return this.ariaPostLabel || '';
   }
   containerHasFocus() {
+    const containerRoot = this.findNearestRoot(this.container);
     return (
-      document.activeElement && this.container.contains(document.activeElement)
+      containerRoot.activeElement &&
+      this.container.contains(containerRoot.activeElement)
     );
+  }
+
+  protected findNearestRoot(node: Node): Document | ShadowRoot {
+    if (node == null || node == document) {
+      return document;
+    }
+    if (
+      node.nodeType === Node.DOCUMENT_FRAGMENT_NODE &&
+      (node as ShadowRoot).host != null
+    ) {
+      return node as ShadowRoot;
+    }
+
+    if (node.parentNode) {
+      return this.findNearestRoot(node.parentNode);
+    } else {
+      return document;
+    }
   }
 
   getTextareaOrThrow() {

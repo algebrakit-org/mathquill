@@ -53,3 +53,7 @@ To export the new version of mathquill to the algebrakit widgets:
   - mathquill.css
   - mathquill.js
   - mathquill.min.js
+
+## Running unit tests
+Run `make test` in the root directory of this repo. After this process is finished running, 
+open the `./test/unit.html` file in a browser to view the results (no need to host the file in a webserver).
