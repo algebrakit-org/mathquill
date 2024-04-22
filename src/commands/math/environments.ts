@@ -899,15 +899,15 @@ LatexCmds.SpaceVector = class extends PMatrixEnvironment {
   createBlocks() {
     this.blocks = [
       new MatrixCell(0, this),
-      new MatrixCell(0, this),
-      new MatrixCell(0, this),
+      new MatrixCell(1, this),
+      new MatrixCell(2, this),
     ];
   }
 };
 
 LatexCmds.PlaneVector = class extends PMatrixEnvironment {
   createBlocks() {
-    this.blocks = [new MatrixCell(0, this), new MatrixCell(0, this)];
+    this.blocks = [new MatrixCell(0, this), new MatrixCell(1, this)];
   }
 };
 
