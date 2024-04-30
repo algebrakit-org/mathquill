@@ -47,7 +47,7 @@ var latexMathParser = (function () {
     .or(
       string('\\').then(
         regex(/^[a-z]+/i)
-          .or(regex(/^\s+|[;,]/).result(' ')) //mslob: added thin and large spaces
+          .or(regex(/^(?:\s+|[;,])/).result(' ')) //mslob: added thin and large spaces
           .or(any)
       )
     )
