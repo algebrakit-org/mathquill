@@ -781,7 +781,10 @@ LatexCmds['.'] = () =>
     '.'
   );
 
-LatexCmds["'"] = LatexCmds.prime = bindVanillaSymbol("'", '&prime;', 'prime');
+LatexCmds["'"] =
+  LatexCmds['′'] =
+  LatexCmds.prime =
+    bindVanillaSymbol("'", '&prime;', 'prime');
 LatexCmds['″'] = LatexCmds.dprime = bindVanillaSymbol(
   '″',
   '&Prime;',
@@ -1146,6 +1149,7 @@ LatexCmds.mp =
     () => new PlusMinus('\\mp ', h.entityText('&#8723;'), 'minus-or-plus');
 
 CharCmds['*'] =
+  CharCmds['⋅'] =
   LatexCmds.sdot =
   LatexCmds.cdot =
     bindBinaryOperator('\\cdot ', '&middot;', '*', 'times'); //semantically should be &sdot;, but &middot; looks better
