@@ -737,3 +737,242 @@ LatexCmds.measuredangle = bindVanillaSymbol(
   '&#8737;',
   'measured angle'
 );
+
+//AL-2087: added additional keys for copy-pasting unicode characters
+LatexCmds['\\'] = LatexCmds['backslash'];
+LatexCmds['$'] = LatexCmds['$'];
+LatexCmds['◻'] = LatexCmds['square'];
+LatexCmds['∣'] = LatexCmds['mid'];
+LatexCmds['&'] = LatexCmds['&'];
+LatexCmds['%'] = LatexCmds['%'];
+LatexCmds['#'] = LatexCmds['#'];
+LatexCmds['∥'] = LatexCmds['parallel'];
+LatexCmds['∦'] = LatexCmds['nparallel'];
+LatexCmds['⟂'] = LatexCmds['perp'];
+LatexCmds['ω'] = () =>
+  new VanillaSymbol('\\omega ', h.entityText('&omega;'), 'omega');
+LatexCmds['ψ'] = () =>
+  new VanillaSymbol('\\psi ', h.entityText('&psi;'), 'psi');
+LatexCmds['χ'] = () =>
+  new VanillaSymbol('\\chi ', h.entityText('&chi;'), 'chi');
+LatexCmds['τ'] = () =>
+  new VanillaSymbol('\\tau ', h.entityText('&tau;'), 'tau');
+LatexCmds['σ'] = () =>
+  new VanillaSymbol('\\sigma ', h.entityText('&sigma;'), 'sigma');
+LatexCmds['ρ'] = () =>
+  new VanillaSymbol('\\rho ', h.entityText('&rho;'), 'rho');
+LatexCmds['ξ'] = () => new VanillaSymbol('\\xi ', h.entityText('&xi;'), 'xi');
+LatexCmds['ν'] = () => new VanillaSymbol('\\nu ', h.entityText('&nu;'), 'nu');
+LatexCmds['μ'] = () => new VanillaSymbol('\\mu ', h.entityText('&mu;'), 'mu');
+LatexCmds['κ'] = () =>
+  new VanillaSymbol('\\kappa ', h.entityText('&kappa;'), 'kappa');
+LatexCmds['ι'] = () =>
+  new VanillaSymbol('\\iota ', h.entityText('&iota;'), 'iota');
+LatexCmds['θ'] = () =>
+  new VanillaSymbol('\\theta ', h.entityText('&theta;'), 'theta');
+LatexCmds['η'] = () =>
+  new VanillaSymbol('\\eta ', h.entityText('&eta;'), 'eta');
+LatexCmds['ζ'] = () =>
+  new VanillaSymbol('\\zeta ', h.entityText('&zeta;'), 'zeta');
+LatexCmds['δ'] = () =>
+  new VanillaSymbol('\\delta ', h.entityText('&delta;'), 'delta');
+LatexCmds['γ'] = () =>
+  new VanillaSymbol('\\gamma ', h.entityText('&gamma;'), 'gamma');
+LatexCmds['β'] = () =>
+  new VanillaSymbol('\\beta ', h.entityText('&beta;'), 'beta');
+LatexCmds['α'] = () =>
+  new VanillaSymbol('\\alpha ', h.entityText('&alpha;'), 'alpha');
+LatexCmds['ϕ'] = () =>
+  new VanillaSymbol('\\phi ', h.entityText('&phi;'), 'phi');
+LatexCmds['φ'] = () =>
+  new VanillaSymbol('\\varphi ', h.entityText('&varphi;'), 'varphi');
+LatexCmds['ϵ'] = () =>
+  new VanillaSymbol('\\epsilon ', h.entityText('&epsilon;'), 'epsilon');
+LatexCmds['ε'] = () =>
+  new VanillaSymbol(
+    '\\varepsilon ',
+    h.entityText('&varepsilon;'),
+    'varepsilon'
+  );
+LatexCmds['ϖ'] = () =>
+  new VanillaSymbol('\\varpi ', h.entityText('&varpi;'), 'varpi');
+LatexCmds['ς'] = () =>
+  new VanillaSymbol('\\varsigma ', h.entityText('&varsigma;'), 'varsigma');
+LatexCmds['ϑ'] = () =>
+  new VanillaSymbol('\\thetasym ', h.entityText('&thetasym;'), 'thetasym');
+LatexCmds['υ'] = () =>
+  new VanillaSymbol('\\upsi ', h.entityText('&upsi;'), 'upsi');
+LatexCmds['ϝ'] = () =>
+  new VanillaSymbol('\\digamma ', h.entityText('&digamma;'), 'digamma');
+LatexCmds['ϰ'] = () =>
+  new VanillaSymbol('\\varkappa ', h.entityText('&varkappa;'), 'varkappa');
+LatexCmds['ϱ'] = () =>
+  new VanillaSymbol('\\varrho ', h.entityText('&varrho;'), 'varrho');
+LatexCmds['λ'] = () =>
+  new VanillaSymbol('\\lambda ', h.entityText('&lambda;'), 'lambda');
+LatexCmds['Υ'] = () =>
+  new VanillaSymbol('\\Upsilon ', h.entityText('&Upsilon;'), 'Upsilon');
+LatexCmds['∀'] = () =>
+  new VanillaSymbol('\\forall ', h.entityText('&forall;'), 'forall');
+LatexCmds['Ω'] = () =>
+  new VanillaSymbol('\\Omega ', h.entityText('&Omega;'), 'Omega');
+LatexCmds['Φ'] = () =>
+  new VanillaSymbol('\\Phi ', h.entityText('&Phi;'), 'Phi');
+LatexCmds['Σ'] = () =>
+  new VanillaSymbol('\\Sigma ', h.entityText('&Sigma;'), 'Sigma');
+LatexCmds['Π'] = () => new VanillaSymbol('\\Pi ', h.entityText('&Pi;'), 'Pi');
+LatexCmds['Ξ'] = () => new VanillaSymbol('\\Xi ', h.entityText('&Xi;'), 'Xi');
+LatexCmds['Λ'] = () =>
+  new VanillaSymbol('\\Lambda ', h.entityText('&Lambda;'), 'Lambda');
+LatexCmds['Θ'] = () =>
+  new VanillaSymbol('\\Theta ', h.entityText('&Theta;'), 'Theta');
+LatexCmds['Δ'] = () =>
+  new VanillaSymbol('\\Delta ', h.entityText('&Delta;'), 'Delta');
+LatexCmds['Γ'] = () =>
+  new VanillaSymbol('\\Gamma ', h.entityText('&Gamma;'), 'Gamma');
+LatexCmds['±'] = LatexCmds['plusminus'];
+LatexCmds['∓'] = LatexCmds['minusplus'];
+LatexCmds['⋅'] = LatexCmds['cdot'];
+LatexCmds['∞'] = LatexCmds['infinity'];
+LatexCmds['×'] = LatexCmds['cross'];
+LatexCmds['÷'] = LatexCmds['divides'];
+LatexCmds['≈'] = LatexCmds['approx'];
+// LatexCmds['̲'] = LatexCmds['underline'];
+// LatexCmds['̅'] = LatexCmds['bar'];
+// LatexCmds['x⃡'] = LatexCmds['overleftrightarrow'];
+// LatexCmds['̇'] = LatexCmds['dot'];
+// LatexCmds['̈'] = LatexCmds['ddot'];
+// LatexCmds['x⃛'] = LatexCmds['dddot'];
+LatexCmds['∑'] = LatexCmds['summation'];
+LatexCmds['∏'] = LatexCmds['product'];
+LatexCmds['∐'] = LatexCmds['coproduct'];
+LatexCmds['⋃'] = LatexCmds['bigcup'];
+LatexCmds['⋂'] = LatexCmds['bigcap'];
+LatexCmds['∫'] = LatexCmds['integral'];
+// LatexCmds['x⃑'] = LatexCmds['vec'];
+// LatexCmds['̃'] = LatexCmds['tilde'];
+LatexCmds['⊕'] = bindBinaryOperator('\\oplus ', '&oplus;', 'o plus');
+LatexCmds['≡'] = bindBinaryOperator('\\equiv ', '&equiv;', 'equivalent');
+LatexCmds['≅'] = bindBinaryOperator('\\cong ', '&cong;', 'congruent');
+LatexCmds['∗'] = LatexCmds['lowast'];
+LatexCmds['∴'] = LatexCmds['therefore'];
+LatexCmds['∵'] = LatexCmds['because'];
+LatexCmds['∝'] = LatexCmds['propto'];
+LatexCmds['∈'] = LatexCmds['in'];
+LatexCmds['∋'] = LatexCmds['contains'];
+LatexCmds['∉'] = LatexCmds['notin'];
+LatexCmds['⊂'] = LatexCmds['subset'];
+LatexCmds['⊃'] = LatexCmds['superset'];
+LatexCmds['⊆'] = LatexCmds['subseteq'];
+LatexCmds['⊇'] = LatexCmds['superseteq'];
+LatexCmds['ℕ'] = LatexCmds['Naturals'];
+LatexCmds['ℙ'] = LatexCmds['Probability'];
+LatexCmds['ℤ'] = LatexCmds['Integers'];
+LatexCmds['ℚ'] = LatexCmds['Rationals'];
+LatexCmds['ℝ'] = LatexCmds['Reals'];
+LatexCmds['ℂ'] = LatexCmds['ComplexPlane'];
+LatexCmds['ℍ'] = LatexCmds['Quaternions'];
+LatexCmds['⋄'] = LatexCmds['diamond'];
+LatexCmds['△'] = LatexCmds['bigtriangleup'];
+LatexCmds['⊖'] = LatexCmds['ominus'];
+LatexCmds['⊎'] = LatexCmds['uplus'];
+LatexCmds['▽'] = LatexCmds['bigtriangledown'];
+LatexCmds['⊓'] = LatexCmds['sqcap'];
+LatexCmds['⊔'] = LatexCmds['sqcup'];
+LatexCmds['⊙'] = LatexCmds['circledot'];
+LatexCmds['†'] = LatexCmds['dagger'];
+LatexCmds['‡'] = LatexCmds['ddagger'];
+LatexCmds['≀'] = LatexCmds['wr'];
+LatexCmds['⨿'] = LatexCmds['amalg'];
+LatexCmds['⊧'] = LatexCmds['models'];
+LatexCmds['≺'] = LatexCmds['prec'];
+LatexCmds['≻'] = LatexCmds['succ'];
+LatexCmds['⪯'] = LatexCmds['preceq'];
+LatexCmds['⪰'] = LatexCmds['succeq'];
+LatexCmds['≃'] = LatexCmds['simeq'];
+LatexCmds['≪'] = LatexCmds['ll'];
+LatexCmds['≫'] = LatexCmds['gg'];
+LatexCmds['⋈'] = LatexCmds['bowtie'];
+LatexCmds['⊏'] = LatexCmds['sqsubset'];
+LatexCmds['⊐'] = LatexCmds['sqsupset'];
+LatexCmds['⌣'] = LatexCmds['smile'];
+LatexCmds['⊑'] = LatexCmds['sqsubseteq'];
+LatexCmds['⊒'] = LatexCmds['sqsupseteq'];
+LatexCmds['⌢'] = LatexCmds['frown'];
+LatexCmds['⊢'] = LatexCmds['vdash'];
+LatexCmds['⊣'] = LatexCmds['dashv'];
+LatexCmds['≮'] = LatexCmds['nless'];
+LatexCmds['≯'] = LatexCmds['ngtr'];
+LatexCmds['⟵'] = LatexCmds['longleftarrow'];
+LatexCmds['⟶'] = LatexCmds['longrightarrow'];
+LatexCmds['⟸'] = LatexCmds['Longleftarrow'];
+LatexCmds['⟹'] = LatexCmds['Longrightarrow'];
+LatexCmds['⟷'] = LatexCmds['longleftrightarrow'];
+LatexCmds['↕'] = LatexCmds['updownarrow'];
+LatexCmds['⟺'] = LatexCmds['Longleftrightarrow'];
+LatexCmds['⇕'] = LatexCmds['Updownarrow'];
+LatexCmds['↗'] = LatexCmds['nearrow'];
+LatexCmds['↩'] = LatexCmds['hookleftarrow'];
+LatexCmds['↪'] = LatexCmds['hookrightarrow'];
+LatexCmds['↘'] = LatexCmds['searrow'];
+LatexCmds['↼'] = LatexCmds['leftharpoonup'];
+LatexCmds['⇀'] = LatexCmds['rightharpoonup'];
+LatexCmds['↙'] = LatexCmds['swarrow'];
+LatexCmds['↽'] = LatexCmds['leftharpoondown'];
+LatexCmds['⇁'] = LatexCmds['rightharpoondown'];
+LatexCmds['↖'] = LatexCmds['nwarrow'];
+LatexCmds['⇌'] = LatexCmds['rightleftharpoons'];
+LatexCmds['↶'] = LatexCmds['curvearrowleft'];
+LatexCmds['↷'] = LatexCmds['curvearrowright'];
+LatexCmds['⋮'] = LatexCmds['vdots'];
+LatexCmds['ℓ'] = LatexCmds['ell'];
+LatexCmds['⊤'] = LatexCmds['top'];
+LatexCmds['♭'] = LatexCmds['flat'];
+LatexCmds['⊺'] = LatexCmds['intercal'];
+LatexCmds['♮'] = LatexCmds['natural'];
+LatexCmds['♯'] = LatexCmds['sharp'];
+LatexCmds['℘'] = LatexCmds['wp'];
+LatexCmds['⊥'] = LatexCmds['bot'];
+LatexCmds['♣'] = LatexCmds['clubsuit'];
+LatexCmds['♢'] = LatexCmds['diamondsuit'];
+LatexCmds['♡'] = LatexCmds['heartsuit'];
+LatexCmds['♠'] = LatexCmds['spadesuit'];
+LatexCmds['∮'] = LatexCmds['oint'];
+LatexCmds['⨆'] = LatexCmds['bigsqcup'];
+LatexCmds['⋁'] = LatexCmds['bigvee'];
+LatexCmds['⋀'] = LatexCmds['bigwedge'];
+LatexCmds['⨀'] = LatexCmds['bigodot'];
+LatexCmds['⨂'] = LatexCmds['bigotimes'];
+LatexCmds['⨁'] = LatexCmds['bigoplus'];
+LatexCmds['⨄'] = LatexCmds['biguplus'];
+LatexCmds['⌊'] = LatexCmds['lfloor'];
+LatexCmds['⌋'] = LatexCmds['rfloor'];
+LatexCmds['⌈'] = LatexCmds['lceil'];
+LatexCmds['⌉'] = LatexCmds['rceil'];
+LatexCmds['∇'] = LatexCmds['del'];
+LatexCmds['∘'] = LatexCmds['circle'];
+LatexCmds['•'] = LatexCmds['bullet'];
+LatexCmds['⧵'] = LatexCmds['smallsetminus'];
+LatexCmds['¬'] = LatexCmds['neg'];
+LatexCmds['↓'] = LatexCmds['downarrow'];
+LatexCmds['⇓'] = LatexCmds['Downarrow'];
+LatexCmds['⇑'] = LatexCmds['Uparrow'];
+LatexCmds['→'] = LatexCmds['rightarrow'];
+LatexCmds['⇒'] = LatexCmds['implies'];
+LatexCmds['⇐'] = LatexCmds['impliedby'];
+LatexCmds['↔'] = LatexCmds['leftrightarrow'];
+LatexCmds['⇔'] = LatexCmds['iff'];
+LatexCmds['ℜ'] = LatexCmds['real'];
+LatexCmds['ℑ'] = LatexCmds['Imaginary'];
+LatexCmds['∂'] = LatexCmds['partial'];
+LatexCmds['£'] = LatexCmds['pounds'];
+LatexCmds['ℵ'] = LatexCmds['alephsym'];
+LatexCmds['∃'] = LatexCmds['exists'];
+LatexCmds['∄'] = LatexCmds['nexist'];
+LatexCmds['∧'] = LatexCmds['wedge'];
+LatexCmds['∨'] = LatexCmds['vee'];
+LatexCmds['∅'] = LatexCmds['varnothing'];
+LatexCmds['∪'] = LatexCmds['union'];
+LatexCmds['∩'] = LatexCmds['intersection'];
+LatexCmds['∠'] = LatexCmds['angle'];
+LatexCmds['∡'] = LatexCmds['measuredangle'];
