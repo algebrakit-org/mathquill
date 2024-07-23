@@ -738,17 +738,10 @@ LatexCmds.measuredangle = bindVanillaSymbol(
   'measured angle'
 );
 
-//AL-2087: added additional keys for copy-pasting unicode characters
+//AL-1830: added additional keys for copy-pasting unicode characters
 LatexCmds['\\'] = LatexCmds['backslash'];
-LatexCmds['$'] = LatexCmds['$'];
 LatexCmds['◻'] = LatexCmds['square'];
 LatexCmds['∣'] = LatexCmds['mid'];
-LatexCmds['&'] = LatexCmds['&'];
-LatexCmds['%'] = LatexCmds['%'];
-LatexCmds['#'] = LatexCmds['#'];
-LatexCmds['∥'] = LatexCmds['parallel'];
-LatexCmds['∦'] = LatexCmds['nparallel'];
-LatexCmds['⟂'] = LatexCmds['perp'];
 LatexCmds['ω'] = () =>
   new VanillaSymbol('\\omega ', h.entityText('&omega;'), 'omega');
 LatexCmds['ψ'] = () =>
@@ -830,37 +823,20 @@ LatexCmds['Δ'] = () =>
   new VanillaSymbol('\\Delta ', h.entityText('&Delta;'), 'Delta');
 LatexCmds['Γ'] = () =>
   new VanillaSymbol('\\Gamma ', h.entityText('&Gamma;'), 'Gamma');
-LatexCmds['±'] = LatexCmds['plusminus'];
 LatexCmds['∓'] = LatexCmds['minusplus'];
 LatexCmds['⋅'] = LatexCmds['cdot'];
 LatexCmds['∞'] = LatexCmds['infinity'];
-LatexCmds['×'] = LatexCmds['cross'];
-LatexCmds['÷'] = LatexCmds['divides'];
-LatexCmds['≈'] = LatexCmds['approx'];
-// LatexCmds['̲'] = LatexCmds['underline'];
-// LatexCmds['̅'] = LatexCmds['bar'];
-// LatexCmds['x⃡'] = LatexCmds['overleftrightarrow'];
-// LatexCmds['̇'] = LatexCmds['dot'];
-// LatexCmds['̈'] = LatexCmds['ddot'];
-// LatexCmds['x⃛'] = LatexCmds['dddot'];
-LatexCmds['∑'] = LatexCmds['summation'];
-LatexCmds['∏'] = LatexCmds['product'];
 LatexCmds['∐'] = LatexCmds['coproduct'];
 LatexCmds['⋃'] = LatexCmds['bigcup'];
 LatexCmds['⋂'] = LatexCmds['bigcap'];
-LatexCmds['∫'] = LatexCmds['integral'];
-// LatexCmds['x⃑'] = LatexCmds['vec'];
-// LatexCmds['̃'] = LatexCmds['tilde'];
 LatexCmds['⊕'] = bindBinaryOperator('\\oplus ', '&oplus;', 'o plus');
 LatexCmds['≡'] = bindBinaryOperator('\\equiv ', '&equiv;', 'equivalent');
 LatexCmds['≅'] = bindBinaryOperator('\\cong ', '&cong;', 'congruent');
-LatexCmds['∗'] = LatexCmds['lowast'];
 LatexCmds['∴'] = LatexCmds['therefore'];
 LatexCmds['∵'] = LatexCmds['because'];
 LatexCmds['∝'] = LatexCmds['propto'];
 LatexCmds['∈'] = LatexCmds['in'];
 LatexCmds['∋'] = LatexCmds['contains'];
-LatexCmds['∉'] = LatexCmds['notin'];
 LatexCmds['⊂'] = LatexCmds['subset'];
 LatexCmds['⊃'] = LatexCmds['superset'];
 LatexCmds['⊆'] = LatexCmds['subseteq'];
@@ -953,11 +929,9 @@ LatexCmds['∇'] = LatexCmds['del'];
 LatexCmds['∘'] = LatexCmds['circle'];
 LatexCmds['•'] = LatexCmds['bullet'];
 LatexCmds['⧵'] = LatexCmds['smallsetminus'];
-LatexCmds['¬'] = LatexCmds['neg'];
 LatexCmds['↓'] = LatexCmds['downarrow'];
 LatexCmds['⇓'] = LatexCmds['Downarrow'];
 LatexCmds['⇑'] = LatexCmds['Uparrow'];
-LatexCmds['→'] = LatexCmds['rightarrow'];
 LatexCmds['⇒'] = LatexCmds['implies'];
 LatexCmds['⇐'] = LatexCmds['impliedby'];
 LatexCmds['↔'] = LatexCmds['leftrightarrow'];
@@ -976,3 +950,14 @@ LatexCmds['∪'] = LatexCmds['union'];
 LatexCmds['∩'] = LatexCmds['intersection'];
 LatexCmds['∠'] = LatexCmds['angle'];
 LatexCmds['∡'] = LatexCmds['measuredangle'];
+
+LatexCmds['̲'] = LatexCmds.underline;
+LatexCmds['̅'] = LatexCmds.bar;
+LatexCmds['̇'] = LatexCmds.dot;
+LatexCmds['̈'] = LatexCmds.ddot;
+LatexCmds['̃'] = LatexCmds.tilde;
+
+//AL-1830: these are 3 diacritics that we support but do not yet support copy-pasting.
+// LatexCmds['x⃡'] = LatexCmds.overleftrightarrow;
+// LatexCmds['⃛'] = LatexCmds.dddot;
+// LatexCmds['x⃑'] = LatexCmds.vec;
