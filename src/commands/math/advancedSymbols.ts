@@ -695,7 +695,8 @@ LatexCmds.and =
   LatexCmds.wedge =
     bindBinaryOperator('\\wedge ', '&and;', 'and');
 
-LatexCmds.or =
+LatexCmds['∨'] =
+  LatexCmds.or =
   LatexCmds.lor =
   LatexCmds.vee =
     bindBinaryOperator('\\vee ', '&or;', 'or');
