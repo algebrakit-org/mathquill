@@ -3,12 +3,10 @@
  ***********************************/
 
 // LatexCmds.notin =
-LatexCmds.cong =
-  LatexCmds.equiv =
-  LatexCmds.oplus =
-  LatexCmds.otimes =
-    (latex: string) =>
-      new BinaryOperator('\\' + latex + ' ', h.entityText('&' + latex + ';'));
+LatexCmds.cong = bindBinaryOperator('\\cong ', '&cong;', 'congruent to');
+LatexCmds.equiv = bindBinaryOperator('\\equiv ', '&equiv;', 'equivalent to');
+LatexCmds.oplus = bindBinaryOperator('\\oplus ', '&oplus;', 'o plus');
+LatexCmds.otimes = bindBinaryOperator('\\otimes ', '&otimes;', 'o times');
 
 LatexCmds['∗'] =
   LatexCmds.ast =
