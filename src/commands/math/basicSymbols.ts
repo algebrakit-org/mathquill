@@ -781,7 +781,10 @@ LatexCmds['.'] = () =>
     '.'
   );
 
-LatexCmds["'"] = LatexCmds.prime = bindVanillaSymbol("'", '&prime;', 'prime');
+LatexCmds["'"] =
+  LatexCmds['′'] =
+  LatexCmds.prime =
+    bindVanillaSymbol("'", '&prime;', 'prime');
 LatexCmds['″'] = LatexCmds.dprime = bindVanillaSymbol(
   '″',
   '&Prime;',
@@ -852,26 +855,24 @@ LatexCmds['⟂'] = LatexCmds.perp = bindVanillaSymbol(
 //the following are all Greek to me, but this helped a lot: http://www.ams.org/STIX/ion/stixsig03.html
 
 //lowercase Greek letter variables
-LatexCmds.alpha =
-  LatexCmds.beta =
-  LatexCmds.gamma =
-  LatexCmds.delta =
-  LatexCmds.zeta =
-  LatexCmds.eta =
-  LatexCmds.theta =
-  LatexCmds.iota =
-  LatexCmds.kappa =
-  LatexCmds.mu =
-  LatexCmds.nu =
-  LatexCmds.xi =
-  LatexCmds.rho =
-  LatexCmds.sigma =
-  LatexCmds.tau =
-  LatexCmds.chi =
-  LatexCmds.psi =
-  LatexCmds.omega =
-    (latex) =>
-      new Variable('\\' + latex + ' ', h.entityText('&' + latex + ';'));
+LatexCmds.alpha = bindVanillaSymbol('\\alpha ', '&alpha;', 'alpha');
+LatexCmds.beta = bindVanillaSymbol('\\beta ', '&beta;', 'beta');
+LatexCmds.gamma = bindVanillaSymbol('\\gamma ', '&gamma;', 'gamma');
+LatexCmds.delta = bindVanillaSymbol('\\delta ', '&delta;', 'delta');
+LatexCmds.zeta = bindVanillaSymbol('\\zeta ', '&zeta;', 'zeta');
+LatexCmds.eta = bindVanillaSymbol('\\eta ', '&eta;', 'eta');
+LatexCmds.theta = bindVanillaSymbol('\\theta ', '&theta;', 'theta');
+LatexCmds.iota = bindVanillaSymbol('\\iota ', '&iota;', 'iota');
+LatexCmds.kappa = bindVanillaSymbol('\\kappa ', '&kappa;', 'kappa');
+LatexCmds.mu = bindVanillaSymbol('\\mu ', '&mu;', 'mu');
+LatexCmds.nu = bindVanillaSymbol('\\nu ', '&nu;', 'nu');
+LatexCmds.xi = bindVanillaSymbol('\\xi ', '&xi;', 'xi');
+LatexCmds.rho = bindVanillaSymbol('\\rho ', '&rho;', 'rho');
+LatexCmds.sigma = bindVanillaSymbol('\\sigma ', '&sigma;', 'sigma');
+LatexCmds.tau = bindVanillaSymbol('\\tau ', '&tau;', 'tau');
+LatexCmds.chi = bindVanillaSymbol('\\chi ', '&chi;', 'chi');
+LatexCmds.psi = bindVanillaSymbol('\\psi ', '&psi;', 'psi');
+LatexCmds.omega = bindVanillaSymbol('\\omega ', '&omega;', 'omega');
 
 //why can't anybody FUCKING agree on these
 LatexCmds.phi = bindVariable('\\phi ', '&#981;', 'phi'); //W3C or Unicode?
@@ -942,19 +943,17 @@ LatexCmds.Upsilon = //LaTeX
       ); //Symbola's 'upsilon with a hook' is a capital Y without hooks :(
 
 //other symbols with the same LaTeX command and HTML character entity reference
-LatexCmds.Gamma =
-  LatexCmds.Delta =
-  LatexCmds.Theta =
-  LatexCmds.Lambda =
-  LatexCmds.Xi =
-  LatexCmds.Pi =
-  LatexCmds.Sigma =
-  LatexCmds.Phi =
-  LatexCmds.Psi =
-  LatexCmds.Omega =
-  LatexCmds.forall =
-    (latex) =>
-      new VanillaSymbol('\\' + latex + ' ', h.entityText('&' + latex + ';'));
+LatexCmds.Gamma = bindVanillaSymbol('\\Gamma ', '&Gamma;', 'Gamma');
+LatexCmds.Delta = bindVanillaSymbol('\\Delta ', '&Delta;', 'Delta');
+LatexCmds.Theta = bindVanillaSymbol('\\Theta ', '&Theta;', 'Theta');
+LatexCmds.Lambda = bindVanillaSymbol('\\Lambda ', '&Lambda;', 'Lambda');
+LatexCmds.Xi = bindVanillaSymbol('\\Xi ', '&Xi;', 'Xi');
+LatexCmds.Pi = bindVanillaSymbol('\\Pi ', '&Pi;', 'Pi');
+LatexCmds.Sigma = bindVanillaSymbol('\\Sigma ', '&Sigma;', 'Sigma');
+LatexCmds.Phi = bindVanillaSymbol('\\Phi ', '&Phi;', 'Phi');
+LatexCmds.Psi = bindVanillaSymbol('\\Psi ', '&Psi;', 'Psi');
+LatexCmds.Omega = bindVanillaSymbol('\\Omega ', '&Omega;', 'Omega');
+LatexCmds.forall = bindVanillaSymbol('\\forall ', '&forall;', 'forall');
 
 // symbols that aren't a single MathCommand, but are instead a whole
 // Fragment. Creates the Fragment from a LaTeX string
@@ -1146,6 +1145,7 @@ LatexCmds.mp =
     () => new PlusMinus('\\mp ', h.entityText('&#8723;'), 'minus-or-plus');
 
 CharCmds['*'] =
+  CharCmds['⋅'] =
   LatexCmds.sdot =
   LatexCmds.cdot =
     bindBinaryOperator('\\cdot ', '&middot;', '*', 'times'); //semantically should be &sdot;, but &middot; looks better
