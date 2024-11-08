@@ -91,6 +91,7 @@ class Options {
   substituteKeyboardEvents: SubstituteKeyboardEvents;
 
   restrictMismatchedBrackets?: boolean;
+  disabledAutoBrackets?: string;
   typingSlashCreatesNewFraction?: boolean;
   charsThatBreakOutOfSupSub: string;
   sumStartsWithNEquals?: boolean;
