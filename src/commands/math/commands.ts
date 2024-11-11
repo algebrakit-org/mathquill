@@ -1375,6 +1375,42 @@ LatexCmds.vec = () =>
 LatexCmds.tilde = () =>
   new DiacriticAbove('\\tilde', h.text('~'), ['tilde(', ')']);
 
+class ConditionalBracket extends MathCommand {
+  constructor(
+    public side: BracketSide,
+    public open: string,
+    public close: string,
+    public ctrlSeq: string,
+    public end: string
+  ) {
+    super();
+  }
+
+  // something choosy between Bracket and VanillaSymbol
+  createLeftOf(cursor: Cursor) {
+    if (
+      cursor.options &&
+      cursor.options.disabledAutoBrackets &&
+      cursor.options.disabledAutoBrackets
+        .split(' ')
+        .indexOf(this.ctrlSeq.trim()) >= 0
+    ) {
+      (this.side == L
+        ? new VanillaSymbol(this.ctrlSeq, h.entityText(this.open))
+        : new VanillaSymbol(this.end, h.entityText(this.close))
+      ).createLeftOf(cursor);
+    } else {
+      new Bracket(
+        this.side,
+        this.open,
+        this.close,
+        this.ctrlSeq,
+        this.end
+      ).createLeftOf(cursor);
+    }
+  }
+}
+
 class DelimsNode extends MathCommand {
   delimFrags: Ends<DOMFragment>;
 
@@ -1750,29 +1786,36 @@ var BRACKET_NAMES = {
   '|': 'pipe',
 };
 
-function bindCharBracketPair(
+function bindBracketPair(
   open: keyof typeof OPP_BRACKS,
-  ctrlSeq: string,
+  openSeq: keyof typeof OPP_BRACKS,
   name: string
 ) {
-  var ctrlSeq = ctrlSeq || open;
+  var singleChar = openSeq.replace('\\', '').length === 1;
   var close = OPP_BRACKS[open];
-  var end = OPP_BRACKS[ctrlSeq as keyof typeof OPP_BRACKS];
-  CharCmds[open] = () => new Bracket(L, open, close, ctrlSeq, end);
-  CharCmds[close] = () => new Bracket(R, open, close, ctrlSeq, end);
+  var closeSeq = OPP_BRACKS[openSeq];
+
+  var openCmd = () => new ConditionalBracket(L, open, close, openSeq, closeSeq);
+  var closeCmd = () =>
+    new ConditionalBracket(R, open, close, openSeq, closeSeq);
+
+  if (singleChar) {
+    CharCmds[openSeq.replace('\\', '').trim()] = openCmd;
+    CharCmds[closeSeq.replace('\\', '').trim()] = closeCmd;
+  } else {
+    LatexCmds[openSeq.replace('\\', '').trim()] = openCmd;
+    LatexCmds[closeSeq.replace('\\', '').trim()] = closeCmd;
+  }
+
   BRACKET_NAMES[open as keyof typeof BRACKET_NAMES] = BRACKET_NAMES[
     close as keyof typeof BRACKET_NAMES
   ] = name;
 }
-bindCharBracketPair('(', '', 'parenthesis');
-bindCharBracketPair('[', '', 'bracket');
-bindCharBracketPair('{', '\\{', 'brace');
-bindCharBracketPair('&lang;', '\\langle ', 'angle');
 
-LatexCmds.langle = () =>
-  new Bracket(L, '&lang;', '&rang;', '\\langle ', '\\rangle ');
-LatexCmds.rangle = () =>
-  new Bracket(R, '&lang;', '&rang;', '\\langle ', '\\rangle ');
+bindBracketPair('(', '(', 'parenthesis');
+bindBracketPair('[', '[', 'bracket');
+bindBracketPair('{', '\\{', 'brace');
+bindBracketPair('&lang;', '\\langle ', 'langle');
 
 CharCmds['|'] = () => new Bracket(L, '|', '|', '|', '|');
 // LatexCmds.lVert = () =>
