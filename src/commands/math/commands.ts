@@ -1409,13 +1409,14 @@ class ConditionalBracket extends MathCommand {
         this.end
       );
     }
+    // The replaces method is called before createLeftOf during some creation calls. Make sure the
+    // behavior is conform the selected subclass
     if (command instanceof MQSymbol && this.replacedFragment) {
       this.replacedFragment.remove();
     } else {
       command.replacedFragment = this.replacedFragment;
     }
-    // The replaces method is called before createLeftOf during some creation calls. Make sure the
-    // information is propagated to the derivative command
+
     command.createLeftOf(cursor);
   }
 }
