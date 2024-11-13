@@ -1386,8 +1386,9 @@ class ConditionalBracket extends MathCommand {
     super();
   }
 
-  // something choosy between Bracket and VanillaSymbol
   createLeftOf(cursor: Cursor) {
+    let command: MathCommand;
+
     if (
       cursor.options &&
       cursor.options.disabledAutoBrackets &&
@@ -1395,19 +1396,28 @@ class ConditionalBracket extends MathCommand {
         .split(' ')
         .indexOf(this.ctrlSeq.trim()) >= 0
     ) {
-      (this.side == L
-        ? new VanillaSymbol(this.ctrlSeq, h.entityText(this.open))
-        : new VanillaSymbol(this.end, h.entityText(this.close))
-      ).createLeftOf(cursor);
+      command =
+        this.side == L
+          ? new VanillaSymbol(this.ctrlSeq, h.entityText(this.open))
+          : new VanillaSymbol(this.end, h.entityText(this.close));
     } else {
-      new Bracket(
+      command = new Bracket(
         this.side,
         this.open,
         this.close,
         this.ctrlSeq,
         this.end
-      ).createLeftOf(cursor);
+      );
     }
+    // The replaces method is called before createLeftOf during some creation calls. Make sure the
+    // behavior is conform the selected subclass
+    if (command instanceof MQSymbol && this.replacedFragment) {
+      this.replacedFragment.remove();
+    } else {
+      command.replacedFragment = this.replacedFragment;
+    }
+
+    command.createLeftOf(cursor);
   }
 }
 
