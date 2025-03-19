@@ -84,29 +84,53 @@ class IntervalCommand extends MathCommand {
     this.intervalClose = close;
     this.intervalDelim = delim;
 
-    const htmlEntityRegex = /&([a-z0-9]+|#[0-9]{1,6}|#x[0-9a-fA-F]{1,6});/;
-    const openH = open.match(htmlEntityRegex)
-      ? h.entityText(open)
-      : h.text(open);
-    const closeH = close.match(htmlEntityRegex)
-      ? h.entityText(close)
-      : h.text(close);
-
-    const domView = new DOMView(2, (blocks) =>
-      h('span', { class: 'mq-non-leaf' }, [
-        h('span', { class: 'mq-scaled mq-paren' }, [openH]),
-        h.block('span', { class: 'mq-non-leaf' }, blocks[0]),
+    const domView = new DOMView(2, (blocks) => {
+      const leftSymbol = this.getSymbol(
+        this.intervalOpen as keyof typeof SVG_SYMBOLS
+      );
+      const rightSymbol = this.getSymbol(
+        this.intervalClose as keyof typeof SVG_SYMBOLS
+      );
+      return h('span', { class: 'mq-non-leaf mq-bracket-container' }, [
+        h(
+          'span',
+          {
+            style: 'width:' + leftSymbol.width,
+            class: 'mq-scaled mq-bracket-l mq-paren',
+          },
+          [leftSymbol.html()]
+        ),
+        h.block(
+          'span',
+          { style: 'margin-left:' + leftSymbol.width, class: 'mq-non-leaf' },
+          blocks[0]
+        ),
         h('span', { class: 'mq-delim' }, [h.text(delim)]),
-        h.block('span', { class: 'mq-non-leaf' }, blocks[1]),
-        h('span', { class: 'mq-scaled mq-paren' }, [closeH]),
-      ])
-    );
+        h.block(
+          'span',
+          { style: 'margin-right:' + rightSymbol.width, class: 'mq-non-leaf' },
+          blocks[1]
+        ),
+        h(
+          'span',
+          {
+            style: 'width:' + rightSymbol.width,
+            class: 'mq-scaled mq-bracket-r mq-paren',
+          },
+          [rightSymbol.html()]
+        ),
+      ]);
+    });
 
     MQSymbol.prototype.setCtrlSeqHtmlTextAndMathspeak.call(
       this,
       ctrlSeq,
       domView
     );
+  }
+
+  getSymbol(ch: keyof typeof SVG_SYMBOLS) {
+    return SVG_SYMBOLS[ch] || { width: '0', html: '' };
   }
 
   latexRecursive(ctx: LatexContext) {
@@ -242,32 +266,11 @@ LatexCmds.PolarVector = LatexCmds.PolarVectorEn = class extends (
   constructor() {
     super('\\PolarVectorEn', '(', ')', ',');
   }
-  latexRecursive(ctx: LatexContext) {
-    this.checkCursorContextOpen(ctx);
-
-    const latexChildren = this.akitLatexChildren();
-    ctx.latex += '\\left(';
-    ctx.latex += latexChildren[0];
-    ctx.latex += ',';
-    ctx.latex += latexChildren[1];
-    ctx.latex += '\\right)';
-
-    this.checkCursorContextClose(ctx);
-  }
 };
 
 LatexCmds.PolarVectorNl = class extends IntervalCommand {
   constructor() {
     super('\\PolarVectorNl', '(', ')', ';');
-  }
-  latexRecursive(ctx: LatexContext) {
-    this.checkCursorContextOpen(ctx);
-
-    const latexChildren = this.akitLatexChildren();
-    ctx.latex +=
-      '\\left(' + latexChildren[0] + ';' + latexChildren[1] + '\\right)';
-
-    this.checkCursorContextClose(ctx);
   }
 };
 
