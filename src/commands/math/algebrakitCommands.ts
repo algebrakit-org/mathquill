@@ -70,27 +70,20 @@ class LogNL extends MathCommand {
 }
 LatexCmds.lognl = LogNL;
 
-// TODO extend from Bracket implementation or migrate some functionality to here
-// (either copy or inherit from DelimNode)
-class IntervalCommand extends MathCommand {
-  public intervalOpen: string;
-  public intervalClose: string;
-  public intervalDelim: string;
-
-  constructor(ctrlSeq: string, open: string, close: string, delim: string) {
+abstract class DelimsPair extends DelimsNode {
+  constructor(
+    ctrlSeq: string,
+    public leftSymbol: keyof typeof SVG_SYMBOLS,
+    public rightSymbol: keyof typeof SVG_SYMBOLS,
+    public separator: string
+  ) {
     super();
 
-    this.intervalOpen = open;
-    this.intervalClose = close;
-    this.intervalDelim = delim;
+    this.ctrlSeq = ctrlSeq;
 
-    const domView = new DOMView(2, (blocks) => {
-      const leftSymbol = this.getSymbol(
-        this.intervalOpen as keyof typeof SVG_SYMBOLS
-      );
-      const rightSymbol = this.getSymbol(
-        this.intervalClose as keyof typeof SVG_SYMBOLS
-      );
+    this.domView = new DOMView(2, (blocks) => {
+      const leftSymbol = this.getSymbol(this.leftSymbol);
+      const rightSymbol = this.getSymbol(this.rightSymbol);
       return h('span', { class: 'mq-non-leaf mq-bracket-container' }, [
         h(
           'span',
@@ -105,7 +98,7 @@ class IntervalCommand extends MathCommand {
           { style: 'margin-left:' + leftSymbol.width, class: 'mq-non-leaf' },
           blocks[0]
         ),
-        h('span', { class: 'mq-delim' }, [h.text(delim)]),
+        h('span', { class: 'mq-delim' }, [h.text(separator)]),
         h.block(
           'span',
           { style: 'margin-right:' + rightSymbol.width, class: 'mq-non-leaf' },
@@ -122,11 +115,15 @@ class IntervalCommand extends MathCommand {
       ]);
     });
 
-    MQSymbol.prototype.setCtrlSeqHtmlTextAndMathspeak.call(
-      this,
-      ctrlSeq,
-      domView
-    );
+    this.textTemplate = [leftSymbol, separator, rightSymbol];
+    this.mathspeakTemplate = [
+      'left ' +
+        BRACKET_NAMES[this.leftSymbol as keyof typeof BRACKET_NAMES] +
+        ',',
+      this.separator,
+      ', right ' +
+        BRACKET_NAMES[this.rightSymbol as keyof typeof BRACKET_NAMES],
+    ];
   }
 
   getSymbol(ch: keyof typeof SVG_SYMBOLS) {
@@ -134,11 +131,12 @@ class IntervalCommand extends MathCommand {
   }
 
   latexRecursive(ctx: LatexContext) {
+    // Destructs the custom Interval command to bracket pair in its latex output
     if (MathQuill.latexSyntax === 'STANDARD') {
       this.checkCursorContextOpen(ctx);
 
-      let leftBracket = this.intervalOpen;
-      let rightBracket = this.intervalClose;
+      let leftBracket: string = this.leftSymbol;
+      let rightBracket: string = this.rightSymbol;
 
       if (leftBracket === '&lang;') leftBracket = '\\langle';
       if (rightBracket === '&rang;') rightBracket = '\\rangle';
@@ -174,10 +172,21 @@ class IntervalCommand extends MathCommand {
   }
 }
 
+class IntervalCommand extends DelimsPair {
+  constructor(
+    ctrlSeq: string,
+    left: keyof typeof SVG_SYMBOLS,
+    right: keyof typeof SVG_SYMBOLS,
+    separator: string
+  ) {
+    super(ctrlSeq, left, right, separator);
+  }
+}
+
 function bindIntervalCommand(
   ctrlSeq: string,
-  open: string,
-  close: string,
+  open: keyof typeof SVG_SYMBOLS,
+  close: keyof typeof SVG_SYMBOLS,
   delim: string
 ) {
   return () => new IntervalCommand(ctrlSeq, open, close, delim);
@@ -260,15 +269,13 @@ LatexCmds.IntervalEnInIn = bindIntervalCommand(
   ','
 );
 
-LatexCmds.PolarVector = LatexCmds.PolarVectorEn = class extends (
-  IntervalCommand
-) {
+LatexCmds.PolarVector = LatexCmds.PolarVectorEn = class extends DelimsPair {
   constructor() {
     super('\\PolarVectorEn', '(', ')', ',');
   }
 };
 
-LatexCmds.PolarVectorNl = class extends IntervalCommand {
+LatexCmds.PolarVectorNl = class extends DelimsPair {
   constructor() {
     super('\\PolarVectorNl', '(', ')', ';');
   }

@@ -1792,6 +1792,7 @@ var OPP_BRACKS = {
   '\\rVert ': '\\lVert ',
 };
 
+// The map will be populated with the other brackets by the bindBracketPair function
 var BRACKET_NAMES = {
   '|': 'pipe',
 };
@@ -1825,7 +1826,7 @@ function bindBracketPair(
 bindBracketPair('(', '(', 'parenthesis');
 bindBracketPair('[', '[', 'bracket');
 bindBracketPair('{', '\\{', 'brace');
-bindBracketPair('&lang;', '\\langle ', 'langle');
+bindBracketPair('&lang;', '\\langle ', 'chevron');
 
 CharCmds['|'] = () => new Bracket(L, '|', '|', '|', '|');
 // LatexCmds.lVert = () =>
