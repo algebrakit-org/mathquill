@@ -196,6 +196,11 @@ class MQNode extends NodeBase {
         else ctrlr.aria.queue('no answer');
         break;
 
+      case 'Enter':
+        // normally handled by typedText, but this can change because of event handlers outside of this module
+        ctrlr.handle('enter');
+        break;
+
       default:
         return;
     }
