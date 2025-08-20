@@ -430,7 +430,7 @@ class MQSymbol extends MathCommand {
 
     // AL-872
     const saneLatex = (this.ctrlSeq || '').replace(
-      /[^\x00-\x7F\u2030]+/g,
+      /[^\x00-\x7F\u2030\u00A2\u20AC]+/g,
       function (ch) {
         return '\\text{' + ch + '}';
       }

@@ -834,6 +834,11 @@ LatexCmds['permil'] =
     () => new NonSymbolaSymbol('‰', h.entityText('&#8240;'), 'permille');
 LatexCmds['#'] = bindVanillaSymbol('\\#', '#', 'hash');
 
+LatexCmds['€'] = () =>
+  new NonSymbolaSymbol('€', h.entityText('&#8364;'), 'euro');
+LatexCmds['¢'] = () =>
+  new NonSymbolaSymbol('¢', h.entityText('&#162;'), 'cent');
+
 LatexCmds['∥'] = LatexCmds.parallel = bindVanillaSymbol(
   '\\parallel ',
   '&#x2225;',
