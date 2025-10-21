@@ -37,17 +37,28 @@ class ForeignObjectCommand extends MQSymbol {
   html(): HTMLElement {
     pray('parent is defined', this.parent);
     // The parent should be a MathBlock which has the controller
-    var parentBlock = this.parent as MathBlock;
-    pray('controller is defined', parentBlock.controller);
-    var controller = parentBlock.controller!;
-    var registry = controller.getForeignObjectRegistry();
-    var registeredElement = registry.get(this.objectId);
-
-    if (registeredElement) {
-      return this.wrapRegisteredElement(registeredElement);
-    } else {
-      return this.createErrorElement();
+    let ancestorNode: MQNode = this.parent;
+    while (ancestorNode.parent) {
+      ancestorNode = ancestorNode.parent;
     }
+    const rootNode = ancestorNode as RootMathBlock;
+
+    pray('controller is defined', rootNode.controller);
+    const controller = rootNode.controller!;
+    const registry = controller.getForeignObjectRegistry();
+    const registeredElement = registry.get(this.objectId);
+
+    let el: HTMLElement;
+    if (registeredElement) {
+      el = this.wrapRegisteredElement(registeredElement);
+    } else {
+      el = this.createErrorElement();
+    }
+
+    this.setDOM(el);
+    NodeBase.linkElementByCmdNode(el, this);
+
+    return el;
   }
 
   /**
