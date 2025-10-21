@@ -356,6 +356,31 @@ function getInterface(v: number): MathQuill.v3.API | MathQuill.v1.API {
       });
       return this;
     }
+
+    // Foreign Object API
+    registerForeignObject(
+      id: string,
+      element: HTMLElement,
+      options?: ForeignObjectOptions
+    ) {
+      this.__controller
+        .getForeignObjectRegistry()
+        .register(id, element, options);
+      return this;
+    }
+
+    unregisterForeignObject(id: string) {
+      this.__controller.getForeignObjectRegistry().unregister(id);
+      return this;
+    }
+
+    getForeignObject(id: string): HTMLElement | null {
+      return this.__controller.getForeignObjectRegistry().get(id);
+    }
+
+    hasForeignObject(id: string): boolean {
+      return this.__controller.getForeignObjectRegistry().has(id);
+    }
   }
 
   abstract class EditableField

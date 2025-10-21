@@ -2,13 +2,13 @@
 
 ## Implementation Progress
 
-**Overall Status: 40% Complete (2 of 5 phases)**
-
 - ✅ Phase 1: Internal Registry Foundation - COMPLETED
 - ✅ Phase 2: MathQuill Command Integration - COMPLETED
-- ⏳ Phase 3: MathField API Extension - NEXT
+- ✅ Phase 3: MathField API Extension - COMPLETED
 - 📋 Phase 4: EmbedNode Refactoring - PLANNED
 - 📋 Phase 5: Advanced Features & Polish - PLANNED
+
+**Core functionality is now complete and usable!** Phases 4 and 5 are optional enhancements.
 
 ## Core Concept
 
@@ -250,11 +250,47 @@ private createErrorElement(): HTMLElement {
 - Appropriate for atomic elements that maintain no internal math structure
 - Application controls element creation and lifecycle; MathQuill just references it
 
-### Phase 3: MathField API Extension
-- Extend MathField with public registry management methods
-- Add public API for object registration/updates
-- Implement proper cleanup and lifecycle management
-- Update TypeScript definitions in `mathquill.d.ts`
+### Phase 3: MathField API Extension ✅
+**Status: COMPLETED**
+- ✅ Added public API methods to `AbstractMathQuill` class in `publicapi.ts`
+- ✅ Methods return `this` for method chaining (fluent API)
+- ✅ Updated TypeScript definitions in `mathquill.d.ts` for v3 namespace
+- ✅ Added `UnmountReason` enum type definition
+- ✅ Added `ForeignObjectOptions` interface type definition
+- ✅ Added foreign object methods to both `BaseMathQuill` and `EditableMathQuill` interfaces
+- ✅ Build and lint passing
+
+**Public API Methods Added:**
+```typescript
+registerForeignObject(id: string, element: HTMLElement, options?: ForeignObjectOptions): this
+unregisterForeignObject(id: string): this
+getForeignObject(id: string): HTMLElement | null
+hasForeignObject(id: string): boolean
+```
+
+**Key Implementation Details:**
+- **v3 API only**: Only added to v3 namespace (latest version), not v1/v2 for forwards compatibility
+- **Fluent API**: Methods return `this` to enable method chaining
+- **Delegates to registry**: All methods delegate to `controller.getForeignObjectRegistry()`
+- **Type safety**: Full TypeScript support with proper type definitions
+
+**Usage Example:**
+```typescript
+const MQ = MathQuill.getInterface(3);
+const mathField = MQ.MathField(element);
+
+const myWidget = document.createElement('button');
+myWidget.textContent = 'Click me';
+
+mathField
+  .registerForeignObject('btn1', myWidget, {
+    onUnmount: (id, el, reason) => {
+      console.log('Widget unmounted:', reason);
+      return reason === MathQuill.v3.UnmountReason.LATEX_CHANGED; // Keep on LaTeX change
+    }
+  })
+  .latex('x = \\foreignobject{btn1} + y');
+```
 
 ### Phase 4: EmbedNode Refactoring
 **NEW PHASE: Align EmbedNode with ForeignObject architecture**
