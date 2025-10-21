@@ -56,7 +56,8 @@ SOURCES_FULL = \
   $(SRC_DIR)/commands/math/advancedSymbols.ts \
   $(SRC_DIR)/commands/math/environments.ts \
   $(SRC_DIR)/commands/math/algebrakitCommands.ts \
-  $(SRC_DIR)/commands/math/LatexCommandInput.ts
+  $(SRC_DIR)/commands/math/LatexCommandInput.ts \
+  $(SRC_DIR)/commands/math/foreignObject.ts
 
 
 SOURCES_BASIC = \
