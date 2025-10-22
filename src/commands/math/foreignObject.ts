@@ -10,6 +10,7 @@
  */
 class ForeignObjectCommand extends MQSymbol {
   private objectId: string = '';
+  private registry: ForeignObjectRegistry | null;
 
   /**
    * Parse the LaTeX syntax: \foreignobject{id}
@@ -45,8 +46,8 @@ class ForeignObjectCommand extends MQSymbol {
 
     pray('controller is defined', rootNode.controller);
     const controller = rootNode.controller!;
-    const registry = controller.getForeignObjectRegistry();
-    const registeredElement = registry.get(this.objectId);
+    this.registry = controller.getForeignObjectRegistry();
+    const registeredElement = this.registry.get(this.objectId);
 
     let el: HTMLElement;
     if (registeredElement) {
@@ -150,6 +151,20 @@ class ForeignObjectCommand extends MQSymbol {
    */
   mathspeak(): string {
     return 'embedded object ' + this.objectId;
+  }
+
+  /**
+   * Override remove() to trigger onUnmount callback when the foreign object
+   * is deleted from the expression (e.g., via backspace/delete keys)
+   */
+  remove() {
+    // Trigger onUnmount callback after detaching element
+    if (this.objectId && this.registry && this.registry.has(this.objectId)) {
+      this.registry.unregister(this.objectId, UnmountReason.LATEX_CHANGED);
+    }
+
+    // Call parent remove() to actually remove from tree
+    return super.remove();
   }
 }
 
