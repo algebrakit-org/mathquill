@@ -21,14 +21,6 @@ declare namespace MathQuill {
       EXPLICIT_UNREGISTER = 'explicit_unregister',
     }
 
-    interface ForeignObjectOptions {
-      onUnmount?: (
-        id: string,
-        element: HTMLElement,
-        reason: UnmountReason
-      ) => boolean;
-    }
-
     type Config = Omit<v1.Config, 'substituteKeyboardEvents' | 'handlers'> & {
       handlers?: HandlerOptions;
     };
@@ -47,16 +39,6 @@ declare namespace MathQuill {
       html: () => string;
       mathspeak: () => string;
       text(): string;
-
-      // Foreign Object API
-      registerForeignObject(
-        id: string,
-        element: HTMLElement,
-        options?: ForeignObjectOptions
-      ): BaseMathQuill;
-      unregisterForeignObject(id: string): BaseMathQuill;
-      getForeignObject(id: string): HTMLElement | null;
-      hasForeignObject(id: string): boolean;
     }
 
     interface EditableMathQuill {
@@ -95,14 +77,7 @@ declare namespace MathQuill {
       clickAt: (x: number, y: number, el: HTMLElement) => EditableMathQuill;
 
       // Foreign Object API
-      registerForeignObject(
-        id: string,
-        element: HTMLElement,
-        options?: ForeignObjectOptions
-      ): EditableMathQuill;
-      unregisterForeignObject(id: string): EditableMathQuill;
-      getForeignObject(id: string): HTMLElement | null;
-      hasForeignObject(id: string): boolean;
+      foreignObject(id: string, element: HTMLElement): EditableMathQuill;
     }
 
     interface API {

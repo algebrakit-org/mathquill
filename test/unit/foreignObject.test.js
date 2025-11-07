@@ -10,57 +10,48 @@ suite('Foreign Objects', function () {
     $(mq.el()).remove();
   });
 
-  suite('Registry API', function () {
-    test('registerForeignObject adds element to registry', function () {
+  suite('foreignObject() API', function () {
+    test('foreignObject inserts element into expression', function () {
       var element = document.createElement('button');
       element.textContent = 'Test';
 
-      mq.registerForeignObject('test1', element);
+      mq.foreignObject('test1', element);
 
-      assert.ok(mq.hasForeignObject('test1'));
-      assert.equal(mq.getForeignObject('test1'), element);
+      var latex = mq.latex();
+      assert.equal(latex, '\\foreignobject{test1}');
     });
 
-    test('registerForeignObject returns this for chaining', function () {
+    test('foreignObject returns this for chaining', function () {
       var element = document.createElement('button');
-      var result = mq.registerForeignObject('test1', element);
+      var result = mq.foreignObject('test1', element);
 
       assert.equal(result, mq);
     });
 
-    test('getForeignObject returns null for non-existent ID', function () {
-      assert.equal(mq.getForeignObject('nonexistent'), null);
-    });
-
-    test('hasForeignObject returns false for non-existent ID', function () {
-      assert.equal(mq.hasForeignObject('nonexistent'), false);
-    });
-
-    test('unregisterForeignObject removes from registry', function () {
+    test('foreignObject can be chained with write', function () {
       var element = document.createElement('button');
-      mq.registerForeignObject('test1', element);
 
-      mq.unregisterForeignObject('test1');
+      mq.foreignObject('test1', element).write(' + y');
 
-      assert.equal(mq.hasForeignObject('test1'), false);
-      assert.equal(mq.getForeignObject('test1'), null);
+      var latex = mq.latex();
+      assert.equal(latex, '\\foreignobject{test1}+y');
     });
 
-    test('multiple foreign objects can be registered', function () {
+    test('multiple foreign objects can be inserted', function () {
       var elem1 = document.createElement('button');
       var elem2 = document.createElement('input');
       var elem3 = document.createElement('div');
 
-      mq.registerForeignObject('btn1', elem1);
-      mq.registerForeignObject('input1', elem2);
-      mq.registerForeignObject('div1', elem3);
+      mq.foreignObject('btn1', elem1);
+      mq.write('+');
+      mq.foreignObject('input1', elem2);
+      mq.write('+');
+      mq.foreignObject('div1', elem3);
 
-      assert.ok(mq.hasForeignObject('btn1'));
-      assert.ok(mq.hasForeignObject('input1'));
-      assert.ok(mq.hasForeignObject('div1'));
-      assert.equal(mq.getForeignObject('btn1'), elem1);
-      assert.equal(mq.getForeignObject('input1'), elem2);
-      assert.equal(mq.getForeignObject('div1'), elem3);
+      var latex = mq.latex();
+      assert.ok(latex.indexOf('\\foreignobject{btn1}') > -1);
+      assert.ok(latex.indexOf('\\foreignobject{input1}') > -1);
+      assert.ok(latex.indexOf('\\foreignobject{div1}') > -1);
     });
   });
 
@@ -69,11 +60,10 @@ suite('Foreign Objects', function () {
       var element = document.createElement('button');
       element.textContent = 'Click';
 
-      mq.registerForeignObject('btn1', element);
-      mq.latex('x = \\foreignobject{btn1} + y');
+      mq.foreignObject('btn1', element);
 
       var latex = mq.latex();
-      assert.equal(latex, 'x=\\foreignobject{btn1}+y');
+      assert.equal(latex, '\\foreignobject{btn1}');
     });
 
     test('foreign object renders in DOM', function () {
@@ -81,8 +71,7 @@ suite('Foreign Objects', function () {
       element.textContent = 'Click';
       element.id = 'test-button';
 
-      mq.registerForeignObject('btn1', element);
-      mq.latex('\\foreignobject{btn1}');
+      mq.foreignObject('btn1', element);
 
       var container = $(mq.el()).find('.mq-foreign-object-container');
       assert.equal(container.length, 1);
@@ -107,9 +96,9 @@ suite('Foreign Objects', function () {
       var elem2 = document.createElement('button');
       elem2.textContent = 'B';
 
-      mq.registerForeignObject('btn1', elem1);
-      mq.registerForeignObject('btn2', elem2);
-      mq.latex('\\foreignobject{btn1} + \\foreignobject{btn2}');
+      mq.foreignObject('btn1', elem1);
+      mq.write('+');
+      mq.foreignObject('btn2', elem2);
 
       var containers = $(mq.el()).find('.mq-foreign-object-container');
       assert.equal(containers.length, 2);
@@ -119,9 +108,13 @@ suite('Foreign Objects', function () {
 
     test('foreign object can be part of complex expression', function () {
       var element = document.createElement('button');
-      mq.registerForeignObject('btn1', element);
-
-      mq.latex('\\frac{\\foreignobject{btn1}}{x^2}');
+      mq.foreignObject('btn1', element);
+      mq.cmd('\\');
+      mq.typedText('frac');
+      mq.keystroke('Enter');
+      mq.typedText('x');
+      mq.keystroke('Tab');
+      mq.typedText('2');
 
       var latex = mq.latex();
       assert.ok(latex.indexOf('\\foreignobject{btn1}') > -1);
@@ -129,61 +122,78 @@ suite('Foreign Objects', function () {
     });
   });
 
-  suite('Lifecycle Management', function () {
-    test('onUnmount callback called when unregistering', function () {
-      var callbackCalled = false;
-      var callbackId = null;
-      var callbackReason = null;
-
+  suite('Automatic Cleanup', function () {
+    test('foreign object removed when LaTeX replaced', function () {
       var element = document.createElement('button');
-      mq.registerForeignObject('btn1', element, {
-        onUnmount: function (id, el, reason) {
-          callbackCalled = true;
-          callbackId = id;
-          callbackReason = reason;
-          return false;
-        },
-      });
+      element.textContent = 'Test';
 
-      mq.unregisterForeignObject('btn1');
+      mq.foreignObject('btn1', element);
+      assert.equal(mq.latex(), '\\foreignobject{btn1}');
 
-      assert.ok(callbackCalled);
-      assert.equal(callbackId, 'btn1');
-      assert.equal(callbackReason, 'explicit_unregister');
+      // Replace LaTeX - btn1 should be automatically cleaned up
+      mq.latex('x + y');
+
+      // Verify btn1 is no longer rendered
+      var containers = $(mq.el()).find('.mq-foreign-object-container');
+      assert.equal(containers.length, 0);
+
+      // If we set LaTeX with btn1 again, it should show error (not in registry)
+      mq.latex('\\foreignobject{btn1}');
+      var errorEl = $(mq.el()).find('.mq-foreign-object-error');
+      assert.equal(errorEl.length, 1);
     });
 
-    test('onUnmount returning true keeps object in registry', function () {
+    test('foreign object kept when still referenced in new LaTeX', function () {
       var element = document.createElement('button');
-      mq.registerForeignObject('btn1', element, {
-        onUnmount: function () {
-          return true; // Keep in registry
-        },
-      });
+      element.id = 'persistent-btn';
 
-      mq.unregisterForeignObject('btn1');
+      mq.foreignObject('btn1', element);
+      assert.equal(mq.latex(), '\\foreignobject{btn1}');
 
-      assert.ok(mq.hasForeignObject('btn1'));
+      // Replace LaTeX but keep the foreign object reference
+      mq.latex('x + \\foreignobject{btn1} + y');
+
+      // Verify btn1 is still rendered (no error)
+      var containers = $(mq.el()).find('.mq-foreign-object-container');
+      assert.equal(containers.length, 1);
+      var button = $(mq.el()).find('#persistent-btn');
+      assert.equal(button.length, 1);
     });
 
-    test('onUnmount returning false removes object from registry', function () {
-      var element = document.createElement('button');
-      mq.registerForeignObject('btn1', element, {
-        onUnmount: function () {
-          return false; // Remove from registry
-        },
-      });
+    test('only unreferenced objects are removed', function () {
+      var elem1 = document.createElement('button');
+      elem1.id = 'btn1-el';
+      var elem2 = document.createElement('button');
+      elem2.id = 'btn2-el';
+      var elem3 = document.createElement('button');
+      elem3.id = 'btn3-el';
 
-      mq.unregisterForeignObject('btn1');
+      mq.foreignObject('btn1', elem1);
+      mq.write('+');
+      mq.foreignObject('btn2', elem2);
+      mq.write('+');
+      mq.foreignObject('btn3', elem3);
 
-      assert.equal(mq.hasForeignObject('btn1'), false);
+      // All three should be present
+      assert.equal($(mq.el()).find('.mq-foreign-object-container').length, 3);
+
+      // Replace LaTeX keeping only btn2
+      mq.latex('\\foreignobject{btn2}');
+
+      // Only btn2 should be rendered
+      var containers = $(mq.el()).find('.mq-foreign-object-container');
+      assert.equal(containers.length, 1);
+      assert.equal($(mq.el()).find('#btn2-el').length, 1);
+
+      // btn1 and btn3 should be gone from registry
+      mq.latex('\\foreignobject{btn1}');
+      var errorEl = $(mq.el()).find('.mq-foreign-object-error');
+      assert.equal(errorEl.length, 1);
     });
 
     test('registry cleared when MathField reverted', function () {
       var element = document.createElement('button');
-      mq.registerForeignObject('btn1', element);
-      mq.latex('\\foreignobject{btn1}');
-
-      assert.ok(mq.hasForeignObject('btn1'));
+      mq.foreignObject('btn1', element);
 
       mq.revert();
 
@@ -194,31 +204,33 @@ suite('Foreign Objects', function () {
   });
 
   suite('Deletion', function () {
-    test('backspace deletes foreign object', function () {
+    test('backspace deletes foreign object from DOM', function () {
       var element = document.createElement('button');
       element.textContent = 'Test';
 
-      mq.registerForeignObject('btn1', element);
-      mq.latex('x = \\foreignobject{btn1}');
+      mq.foreignObject('btn1', element).write('+y');
 
-      // Move cursor to end
+      // Move cursor to before +y
       mq.moveToRightEnd();
+      mq.keystroke('Left');
+      mq.keystroke('Left');
 
       // Backspace to delete foreign object
       mq.keystroke('Backspace');
 
       var latex = mq.latex();
-      assert.equal(latex, 'x=');
+      assert.ok(latex.indexOf('\\foreignobject{btn1}') === -1);
+      assert.ok(latex.indexOf('+y') > -1);
 
       // Check that foreign object is no longer rendered
       var containers = $(mq.el()).find('.mq-foreign-object-container');
       assert.equal(containers.length, 0);
     });
 
-    test('delete key removes foreign object', function () {
+    test('delete key removes foreign object from DOM', function () {
       var element = document.createElement('button');
-      mq.registerForeignObject('btn1', element);
-      mq.latex('\\foreignobject{btn1} + x');
+      mq.foreignObject('btn1', element);
+      mq.write('+x');
 
       // Move cursor to left of foreign object
       mq.moveToLeftEnd();
@@ -230,25 +242,23 @@ suite('Foreign Objects', function () {
       assert.ok(latex.indexOf('\\foreignobject{btn1}') === -1);
     });
 
-    test('onUnmount called with LATEX_CHANGED when deleted', function () {
-      var callbackCalled = false;
-      var callbackReason = null;
-
+    test('deleting foreign object removes from registry', function () {
       var element = document.createElement('button');
-      mq.registerForeignObject('btn1', element, {
-        onUnmount: function (id, el, reason) {
-          callbackCalled = true;
-          callbackReason = reason;
-          return false;
-        },
-      });
+      element.id = 'deletable-btn';
 
-      mq.latex('\\foreignobject{btn1}');
+      mq.foreignObject('btn1', element);
+
+      // Verify it's rendered
+      assert.equal($(mq.el()).find('#deletable-btn').length, 1);
+
+      // Delete it
       mq.moveToRightEnd();
       mq.keystroke('Backspace');
 
-      assert.ok(callbackCalled);
-      assert.equal(callbackReason, 'latex_changed');
+      // Try to use it again - should show error
+      mq.latex('\\foreignobject{btn1}');
+      var errorEl = $(mq.el()).find('.mq-foreign-object-error');
+      assert.equal(errorEl.length, 1);
     });
   });
 
@@ -258,8 +268,7 @@ suite('Foreign Objects', function () {
       element.id = 'unique-test-id';
       element.textContent = 'Original';
 
-      mq.registerForeignObject('btn1', element);
-      mq.latex('\\foreignobject{btn1}');
+      mq.foreignObject('btn1', element);
 
       // Find the button in the DOM
       var renderedButton = $(mq.el()).find('#unique-test-id');
@@ -272,55 +281,68 @@ suite('Foreign Objects', function () {
       assert.equal(renderedButton.text(), 'Modified');
     });
 
-    test('element can be reused after LaTeX change', function () {
+    test('element removed from DOM when LaTeX changes', function () {
       var element = document.createElement('button');
-      element.textContent = 'Reusable';
+      element.id = 'removable-btn';
+      element.textContent = 'Removable';
 
-      mq.registerForeignObject('btn1', element, {
-        onUnmount: function () {
-          return true; // Keep in registry
-        },
-      });
+      mq.foreignObject('btn1', element);
 
-      mq.latex('x = \\foreignobject{btn1}');
-      var latex1 = mq.latex();
+      // Verify it's in the DOM
+      assert.equal($(mq.el()).find('#removable-btn').length, 1);
 
-      // Change LaTeX (triggers unmount)
-      mq.latex('y = 2');
+      // Change LaTeX
+      mq.latex('x + y');
 
-      // Object should still be in registry
-      assert.ok(mq.hasForeignObject('btn1'));
-
-      // Can be used again
-      mq.latex(latex1);
-      var containers = $(mq.el()).find('.mq-foreign-object-container');
-      assert.equal(containers.length, 1);
+      // Element should be removed from MathField DOM
+      assert.equal($(mq.el()).find('#removable-btn').length, 0);
     });
   });
 
   suite('Valid ID patterns', function () {
     test('accepts alphanumeric IDs', function () {
       var element = document.createElement('div');
-      mq.registerForeignObject('abc123', element);
-      mq.latex('\\foreignobject{abc123}');
+      mq.foreignObject('abc123', element);
 
       assert.equal(mq.latex(), '\\foreignobject{abc123}');
     });
 
     test('accepts IDs with hyphens', function () {
       var element = document.createElement('div');
-      mq.registerForeignObject('my-widget', element);
-      mq.latex('\\foreignobject{my-widget}');
+      mq.foreignObject('my-widget', element);
 
       assert.equal(mq.latex(), '\\foreignobject{my-widget}');
     });
 
     test('accepts IDs with underscores', function () {
       var element = document.createElement('div');
-      mq.registerForeignObject('my_widget', element);
-      mq.latex('\\foreignobject{my_widget}');
+      mq.foreignObject('my_widget', element);
 
       assert.equal(mq.latex(), '\\foreignobject{my_widget}');
+    });
+  });
+
+  suite('Cursor positioning', function () {
+    test('cursor positioned after inserted foreign object', function () {
+      var element = document.createElement('button');
+      mq.foreignObject('btn1', element);
+
+      // Cursor should be after the foreign object
+      // Typing should add after it
+      mq.typedText('x');
+
+      var latex = mq.latex();
+      assert.equal(latex, '\\foreignobject{btn1}x');
+    });
+
+    test('can write before foreign object', function () {
+      var element = document.createElement('button');
+      mq.foreignObject('btn1', element);
+      mq.moveToLeftEnd();
+      mq.typedText('x');
+
+      var latex = mq.latex();
+      assert.equal(latex, 'x\\foreignobject{btn1}');
     });
   });
 });

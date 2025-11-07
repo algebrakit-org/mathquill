@@ -153,14 +153,9 @@ class ForeignObjectCommand extends MQSymbol {
     return 'embedded object ' + this.objectId;
   }
 
-  /**
-   * Override remove() to trigger onUnmount callback when the foreign object
-   * is deleted from the expression (e.g., via backspace/delete keys)
-   */
-  remove() {
-    // Trigger onUnmount callback after detaching element
+  remove(): this {
     if (this.objectId && this.registry && this.registry.has(this.objectId)) {
-      this.registry.unregister(this.objectId, UnmountReason.LATEX_CHANGED);
+      this.registry.unregister(this.objectId);
     }
 
     // Call parent remove() to actually remove from tree

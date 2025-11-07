@@ -292,9 +292,7 @@ function getInterface(v: number): MathQuill.v3.API | MathQuill.v1.API {
       this.revert = function () {
         ctrlr.removeMouseEventListener();
         // Clean up foreign object registry when MathField is destroyed
-        ctrlr
-          .getForeignObjectRegistry()
-          .clear(UnmountReason.MATHFIELD_DESTROYED);
+        ctrlr.getForeignObjectRegistry().clear();
         domFrag(el)
           .removeClass('mq-editable-field mq-math-mode mq-text-mode')
           .empty()
@@ -331,6 +329,14 @@ function getInterface(v: number): MathQuill.v3.API | MathQuill.v1.API {
         this.__controller.renderLatexMath(latex);
         const cursor = this.__controller.cursor;
         if (this.__controller.blurred) cursor.hide().parent.blur(cursor);
+
+        // Cleanup unreferenced foreign objects after LaTeX changes
+        const latexString = typeof latex === 'string' ? latex : String(latex);
+        const referencedIds = extractForeignObjectIds(latexString);
+        this.__controller
+          .getForeignObjectRegistry()
+          .cleanupUnreferencedIds(referencedIds);
+
         return this;
       }
       return this.__controller.exportLatex();
@@ -355,31 +361,6 @@ function getInterface(v: number): MathQuill.v3.API | MathQuill.v1.API {
         node.reflow();
       });
       return this;
-    }
-
-    // Foreign Object API
-    registerForeignObject(
-      id: string,
-      element: HTMLElement,
-      options?: ForeignObjectOptions
-    ) {
-      this.__controller
-        .getForeignObjectRegistry()
-        .register(id, element, options);
-      return this;
-    }
-
-    unregisterForeignObject(id: string) {
-      this.__controller.getForeignObjectRegistry().unregister(id);
-      return this;
-    }
-
-    getForeignObject(id: string): HTMLElement | null {
-      return this.__controller.getForeignObjectRegistry().get(id);
-    }
-
-    hasForeignObject(id: string): boolean {
-      return this.__controller.getForeignObjectRegistry().has(id);
     }
   }
 
@@ -409,6 +390,13 @@ function getInterface(v: number): MathQuill.v3.API | MathQuill.v1.API {
       const cursor = this.__controller.cursor;
       if (this.__controller.blurred) cursor.hide().parent.blur(cursor);
       return this;
+    }
+    foreignObject(id: string, element: HTMLElement) {
+      // Register the foreign object in the internal registry
+      this.__controller.getForeignObjectRegistry().register(id, element);
+
+      // Insert the LaTeX command at cursor position
+      return this.write('\\foreignobject{' + id + '}');
     }
     empty() {
       var root = this.__controller.root,
