@@ -291,6 +291,10 @@ function getInterface(v: number): MathQuill.v3.API | MathQuill.v1.API {
 
       this.revert = function () {
         ctrlr.removeMouseEventListener();
+        // Clean up foreign object registry when MathField is destroyed
+        ctrlr
+          .getForeignObjectRegistry()
+          .clear(UnmountReason.MATHFIELD_DESTROYED);
         domFrag(el)
           .removeClass('mq-editable-field mq-math-mode mq-text-mode')
           .empty()
