@@ -1,0 +1,38 @@
+// Foreign Object Styles
+// Styles for embedded external HTMLElements in math expressions
+
+.mq-foreign-object-container {
+  .inline-block;
+  vertical-align: middle;
+  margin: 0 0.2em;
+
+  // Prevent MathQuill from applying math-specific styles to embedded content
+  font-family: inherit;
+  font-style: normal;
+  font-weight: normal;
+
+  // Ensure the embedded element doesn't break layout
+  max-width: 100%;
+
+  // Make it clear this is an interactive element
+  cursor: default;
+}
+
+.mq-foreign-object-error {
+  .inline-block;
+  color: #d32f2f; // Error red
+  background-color: #ffebee; // Light red background
+  border: 1px solid #ffcdd2;
+  border-radius: 3px;
+  padding: 0.1em 0.3em;
+  font-family: monospace;
+  font-size: 0.9em;
+  vertical-align: middle;
+  margin: 0 0.2em;
+
+  // Make it obvious this is an error
+  &::before {
+    content: '⚠ ';
+    font-family: inherit;
+  }
+}

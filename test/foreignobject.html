@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=624" />
+
+    <title>MathQuill Foreign Object Test</title>
+
+    <style>
+      @font-face {
+        font-family: Symbola;
+        src: url('../src/fonts/Symbola-basic.woff') format('woff');
+      }
+    </style>
+
+    <link rel="stylesheet" type="text/css" href="support/home.css" />
+    <link rel="stylesheet" type="text/css" href="../build/mathquill.css" />
+
+    <style type="text/css">
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 800px;
+        margin: 40px auto;
+        padding: 20px;
+      }
+      h1 {
+        color: #333;
+        border-bottom: 2px solid #4caf50;
+        padding-bottom: 10px;
+      }
+      h2 {
+        color: #555;
+        margin-top: 30px;
+      }
+      .demo-section {
+        margin: 30px 0;
+        padding: 20px;
+        background: #f9f9f9;
+        border-radius: 8px;
+        border: 1px solid #ddd;
+      }
+      .math-field {
+        width: 100%;
+        margin: 10px 0;
+        font-size: 20px;
+      }
+      button {
+        background: #4caf50;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        margin: 5px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+      }
+      button:hover {
+        background: #45a049;
+      }
+      button.secondary {
+        background: #2196f3;
+      }
+      button.secondary:hover {
+        background: #0b7dda;
+      }
+      button.danger {
+        background: #f44336;
+      }
+      button.danger:hover {
+        background: #da190b;
+      }
+      .custom-widget {
+        display: inline-block;
+        padding: 5px 10px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 4px;
+        font-size: 14px;
+        cursor: pointer;
+        user-select: none;
+      }
+      .custom-widget:hover {
+        transform: scale(1.05);
+      }
+      .color-picker {
+        border: 2px solid #333;
+        cursor: pointer;
+        padding: 2px;
+        border-radius: 4px;
+      }
+      .counter-widget {
+        display: inline-flex;
+        align-items: center;
+        background: #fff;
+        border: 2px solid #4caf50;
+        border-radius: 4px;
+        padding: 2px;
+      }
+      .counter-widget button {
+        padding: 2px 8px;
+        margin: 0 2px;
+        font-size: 12px;
+        min-width: 25px;
+      }
+      .counter-widget span {
+        min-width: 30px;
+        text-align: center;
+        font-weight: bold;
+        padding: 0 5px;
+      }
+      .log {
+        background: #263238;
+        color: #aed581;
+        padding: 15px;
+        border-radius: 4px;
+        font-family: 'Courier New', monospace;
+        font-size: 12px;
+        max-height: 200px;
+        overflow-y: auto;
+        margin-top: 10px;
+      }
+      .log-entry {
+        margin: 2px 0;
+      }
+      .controls {
+        margin: 15px 0;
+      }
+      .info {
+        background: #e3f2fd;
+        padding: 10px;
+        border-left: 4px solid #2196f3;
+        margin: 10px 0;
+        border-radius: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>MathQuill Foreign Object Test</h1>
+
+    <div class="info">
+      <strong>Foreign Objects</strong> allow you to embed arbitrary HTML
+      elements (buttons, inputs, custom components) directly into math
+      expressions. The LaTeX only stores an ID reference
+      (<code>\foreignobject{id}</code>), while the actual HTML element is
+      managed separately.
+    </div>
+
+    <!-- Demo 1: Simple Button -->
+    <div class="demo-section">
+      <h2>Demo 1: Interactive Button</h2>
+      <p>A clickable button embedded in a math expression.</p>
+      <div id="math1" class="math-field"></div>
+      <div class="controls">
+        <button onclick="demo1.insert()">Insert Button</button>
+        <button class="secondary" onclick="demo1.showLatex()">
+          Show LaTeX
+        </button>
+        <button class="danger" onclick="demo1.clear()">Clear</button>
+      </div>
+      <div id="log1" class="log"></div>
+    </div>
+
+    <!-- Demo 2: Color Picker -->
+    <div class="demo-section">
+      <h2>Demo 2: Color Picker Widget</h2>
+      <p>An HTML5 color picker embedded in the expression.</p>
+      <div id="math2" class="math-field"></div>
+      <div class="controls">
+        <button onclick="demo2.insert()">Insert Color Picker</button>
+        <button class="secondary" onclick="demo2.showLatex()">
+          Show LaTeX
+        </button>
+        <button class="danger" onclick="demo2.clear()">Clear</button>
+      </div>
+      <div id="log2" class="log"></div>
+    </div>
+
+    <!-- Demo 3: Counter Widget -->
+    <div class="demo-section">
+      <h2>Demo 3: Stateful Counter Widget</h2>
+      <p>
+        A stateful counter widget that maintains its value independently of
+        LaTeX.
+      </p>
+      <div id="math3" class="math-field"></div>
+      <div class="controls">
+        <button onclick="demo3.insert()">Insert Counter</button>
+        <button class="secondary" onclick="demo3.showLatex()">
+          Show LaTeX
+        </button>
+        <button class="secondary" onclick="demo3.reloadLatex()">
+          Reload from LaTeX
+        </button>
+        <button class="danger" onclick="demo3.clear()">Clear</button>
+      </div>
+      <div id="log3" class="log"></div>
+    </div>
+
+    <!-- Demo 4: Multiple Objects -->
+    <div class="demo-section">
+      <h2>Demo 4: Multiple Foreign Objects</h2>
+      <p>Multiple different widgets in the same expression.</p>
+      <div id="math4" class="math-field"></div>
+      <div class="controls">
+        <button onclick="demo4.insertAll()">Insert All Widgets</button>
+        <button class="secondary" onclick="demo4.showLatex()">
+          Show LaTeX
+        </button>
+        <button class="danger" onclick="demo4.clear()">Clear</button>
+      </div>
+      <div id="log4" class="log"></div>
+    </div>
+
+    <script src="../build/mathquill.js"></script>
+    <script>
+      // Initialize MathQuill v3 API
+      const MQ = MathQuill.getInterface(3);
+
+      // Utility to log messages
+      function log(logId, message) {
+        const logEl = document.getElementById(logId);
+        const entry = document.createElement('div');
+        entry.className = 'log-entry';
+        entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+        logEl.appendChild(entry);
+        logEl.scrollTop = logEl.scrollHeight;
+      }
+
+      // Demo 1: Simple Button
+      const demo1 = {
+        mathField: null,
+
+        init() {
+          this.mathField = MQ.MathField(document.getElementById('math1'));
+          log('log1', 'Math field initialized');
+        },
+
+        insert() {
+          const button = document.createElement('button');
+          button.textContent = '🎲 Click Me!';
+          button.className = 'custom-widget';
+          button.onclick = () => {
+            log(
+              'log1',
+              `Button clicked! Random number: ${Math.floor(
+                Math.random() * 100
+              )}`
+            );
+          };
+
+          this.mathField.registerForeignObject('btn1', button);
+          this.mathField.latex('f(x) = \\foreignobject{btn1} + x^2');
+          log('log1', 'Button inserted with ID: btn1');
+        },
+
+        showLatex() {
+          const latex = this.mathField.latex();
+          log('log1', `LaTeX: ${latex}`);
+        },
+
+        clear() {
+          this.mathField.latex('');
+          log('log1', 'Cleared');
+        },
+      };
+
+      // Demo 2: Color Picker
+      const demo2 = {
+        mathField: null,
+
+        init() {
+          this.mathField = MQ.MathField(document.getElementById('math2'));
+          log('log2', 'Math field initialized');
+        },
+
+        insert() {
+          const colorPicker = document.createElement('input');
+          colorPicker.type = 'color';
+          colorPicker.value = '#ff0000';
+          colorPicker.className = 'color-picker';
+          colorPicker.onchange = (e) => {
+            log('log2', `Color changed to: ${e.target.value}`);
+          };
+
+          this.mathField.registerForeignObject('color1', colorPicker);
+          this.mathField.latex('c = \\foreignobject{color1}');
+          log('log2', 'Color picker inserted with ID: color1');
+        },
+
+        showLatex() {
+          const latex = this.mathField.latex();
+          log('log2', `LaTeX: ${latex}`);
+        },
+
+        clear() {
+          this.mathField.latex('');
+          log('log2', 'Cleared');
+        },
+      };
+
+      // Demo 3: Stateful Counter
+      const demo3 = {
+        mathField: null,
+        counter: 0,
+        counterWidget: null,
+
+        init() {
+          this.mathField = MQ.MathField(document.getElementById('math3'));
+          log('log3', 'Math field initialized');
+        },
+
+        createCounter() {
+          const widget = document.createElement('div');
+          widget.className = 'counter-widget';
+
+          const decrementBtn = document.createElement('button');
+          decrementBtn.textContent = '−';
+          decrementBtn.onclick = () => {
+            this.counter--;
+            this.updateCounter();
+          };
+
+          const valueSpan = document.createElement('span');
+          valueSpan.textContent = this.counter;
+
+          const incrementBtn = document.createElement('button');
+          incrementBtn.textContent = '+';
+          incrementBtn.onclick = () => {
+            this.counter++;
+            this.updateCounter();
+          };
+
+          widget.appendChild(decrementBtn);
+          widget.appendChild(valueSpan);
+          widget.appendChild(incrementBtn);
+
+          this.counterWidget = widget;
+          return widget;
+        },
+
+        updateCounter() {
+          const valueSpan = this.counterWidget.querySelector('span');
+          valueSpan.textContent = this.counter;
+          log('log3', `Counter value: ${this.counter}`);
+        },
+
+        insert() {
+          const widget = this.createCounter();
+
+          this.mathField.registerForeignObject('counter1', widget, {
+            onUnmount: (id, element, reason) => {
+              log('log3', `Widget unmounted. Reason: ${reason}`);
+              // Return true to keep in registry (for reuse when reloading LaTeX)
+              return true;
+            },
+          });
+
+          this.mathField.latex('n = \\foreignobject{counter1}');
+          log('log3', 'Counter inserted with ID: counter1');
+        },
+
+        reloadLatex() {
+          const latex = this.mathField.latex();
+          this.mathField.latex(latex);
+          log('log3', `Reloaded from LaTeX: ${latex}`);
+          log('log3', 'Note: Counter widget is reused with same state!');
+        },
+
+        showLatex() {
+          const latex = this.mathField.latex();
+          log('log3', `LaTeX: ${latex}`);
+        },
+
+        clear() {
+          this.mathField.latex('');
+          this.counter = 0;
+          log('log3', 'Cleared and reset counter');
+        },
+      };
+
+      // Demo 4: Multiple Objects
+      const demo4 = {
+        mathField: null,
+
+        init() {
+          this.mathField = MQ.MathField(document.getElementById('math4'));
+          log('log4', 'Math field initialized');
+        },
+
+        insertAll() {
+          // Create multiple widgets
+          const btn1 = document.createElement('button');
+          btn1.textContent = '📊';
+          btn1.className = 'custom-widget';
+          btn1.onclick = () => log('log4', 'Chart button clicked!');
+
+          const btn2 = document.createElement('button');
+          btn2.textContent = '📈';
+          btn2.className = 'custom-widget';
+          btn2.onclick = () => log('log4', 'Graph button clicked!');
+
+          const input = document.createElement('input');
+          input.type = 'number';
+          input.value = '42';
+          input.style.width = '60px';
+          input.style.padding = '4px';
+          input.style.border = '2px solid #4CAF50';
+          input.style.borderRadius = '4px';
+          input.onchange = (e) => log('log4', `Input value: ${e.target.value}`);
+
+          // Register all widgets
+          this.mathField
+            .registerForeignObject('chart', btn1)
+            .registerForeignObject('graph', btn2)
+            .registerForeignObject('input1', input)
+            .latex(
+              'y = \\foreignobject{chart} + \\foreignobject{input1} \\times \\foreignobject{graph}'
+            );
+
+          log('log4', 'Multiple widgets inserted!');
+        },
+
+        showLatex() {
+          const latex = this.mathField.latex();
+          log('log4', `LaTeX: ${latex}`);
+        },
+
+        clear() {
+          this.mathField.latex('');
+          log('log4', 'Cleared');
+        },
+      };
+
+      // Initialize all demos
+      window.addEventListener('DOMContentLoaded', () => {
+        demo1.init();
+        demo2.init();
+        demo3.init();
+        demo4.init();
+      });
+    </script>
+  </body>
+</html>

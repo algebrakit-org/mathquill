@@ -42,6 +42,8 @@ class ControllerBase {
       }
     | undefined;
 
+  private foreignObjectRegistry: ForeignObjectRegistry;
+
   constructor(
     root: ControllerRoot,
     container: HTMLElement,
@@ -58,6 +60,9 @@ class ControllerBase {
     this.ariaLabel = 'Math Input';
     this.ariaPostLabel = '';
 
+    // Initialize foreign object registry for this MathField instance
+    this.foreignObjectRegistry = new ForeignObjectRegistry();
+
     root.controller = this.getControllerSelf();
 
     this.cursor = root.cursor = new Cursor(
@@ -71,6 +76,10 @@ class ControllerBase {
   getControllerSelf() {
     // dance we have to do to tell this thing it's a full controller
     return this as any as Controller;
+  }
+
+  getForeignObjectRegistry(): ForeignObjectRegistry {
+    return this.foreignObjectRegistry;
   }
 
   handle(name: HandlersWithDirection, dir: Direction): void;
