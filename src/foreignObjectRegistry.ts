@@ -1,29 +1,18 @@
 /**
- * Reasons why a foreign object might be unmounted from the DOM
+ * Extract all foreign object IDs from a LaTeX string
+ * @param latex - The LaTeX string to scan
+ * @returns Array of unique IDs found in \foreignobject{id} commands
  */
-enum UnmountReason {
-  /** The LaTeX content changed, removing the foreign object reference */
-  LATEX_CHANGED = 'latex_changed',
-  /** The entire MathField is being destroyed */
-  MATHFIELD_DESTROYED = 'mathfield_destroyed',
-  /** Explicit call to unregisterForeignObject */
-  EXPLICIT_UNREGISTER = 'explicit_unregister',
-}
+function extractForeignObjectIds(latex: string): string[] {
+  const regex = /\\foreignobject\{([a-zA-Z0-9_-]+)\}/g;
+  const ids: string[] = [];
+  let match: RegExpExecArray | null;
 
-/**
- * Options for registering a foreign object
- */
-interface ForeignObjectOptions {
-  /**
-   * Callback invoked when the foreign object is unmounted from the DOM.
-   * Return true to keep the object in the registry for future reuse.
-   * Return false (or omit) to remove it from the registry.
-   */
-  onUnmount?: (
-    id: string,
-    element: HTMLElement,
-    reason: UnmountReason
-  ) => boolean;
+  while ((match = regex.exec(latex)) !== null) {
+    ids.push(match[1]);
+  }
+
+  return ids;
 }
 
 /**
@@ -31,7 +20,6 @@ interface ForeignObjectOptions {
  */
 interface ForeignObjectEntry {
   element: HTMLElement;
-  options?: ForeignObjectOptions;
 }
 
 /**
@@ -46,13 +34,8 @@ class ForeignObjectRegistry {
    * Register a foreign object with the given ID
    * @param id - Unique identifier for the foreign object
    * @param element - The HTMLElement to embed
-   * @param options - Optional configuration including lifecycle callbacks
    */
-  register(
-    id: string,
-    element: HTMLElement,
-    options?: ForeignObjectOptions
-  ): void {
+  register(id: string, element: HTMLElement): void {
     pray(
       'Foreign object ID must be a non-empty string',
       id && typeof id === 'string'
@@ -66,7 +49,7 @@ class ForeignObjectRegistry {
       !this.entries.has(id)
     );
 
-    this.entries.set(id, { element, options });
+    this.entries.set(id, { element });
   }
 
   /**
@@ -75,35 +58,14 @@ class ForeignObjectRegistry {
    * @param reason - Why the object is being unregistered
    * @returns true if object was unregistered, false if it wasn't found
    */
-  unregister(
-    id: string,
-    reason: UnmountReason = UnmountReason.EXPLICIT_UNREGISTER
-  ): boolean {
+  unregister(id: string): boolean {
     const entry = this.entries.get(id);
     if (!entry) {
       return false;
     }
 
-    // Call onUnmount callback if provided
-    let shouldKeep = false;
-    if (entry.options?.onUnmount) {
-      try {
-        shouldKeep = entry.options.onUnmount(id, entry.element, reason);
-      } catch (error) {
-        console.error(
-          `Error in onUnmount callback for foreign object "${id}":`,
-          error
-        );
-      }
-    }
-
-    // Remove from registry unless callback explicitly requested to keep it
-    if (!shouldKeep) {
-      this.entries.delete(id);
-      return true;
-    }
-
-    return false;
+    this.entries.delete(id);
+    return true;
   }
 
   /**
@@ -142,18 +104,14 @@ class ForeignObjectRegistry {
    * This is called when the MathField is destroyed
    * @param reason - Why the registry is being cleared
    */
-  clear(reason: UnmountReason = UnmountReason.MATHFIELD_DESTROYED): void {
+  clear(): void {
     const ids = this.getAllIds();
 
-    // Notify all entries about unmounting
     for (const id of ids) {
-      this.unregister(id, reason);
+      this.unregister(id);
     }
 
-    // Force clear any remaining entries (those that requested to be kept)
-    if (reason === UnmountReason.MATHFIELD_DESTROYED) {
-      this.entries.clear();
-    }
+    this.entries.clear();
   }
 
   /**
@@ -162,5 +120,21 @@ class ForeignObjectRegistry {
    */
   size(): number {
     return this.entries.size;
+  }
+
+  /**
+   * Remove foreign objects that are not referenced in the provided ID list
+   * This is used for automatic cleanup when LaTeX content changes
+   * @param referencedIds - Array of IDs that are currently referenced in LaTeX
+   */
+  cleanupUnreferencedIds(referencedIds: string[]): void {
+    const referencedSet = new Set(referencedIds);
+    const allIds = this.getAllIds();
+
+    for (const id of allIds) {
+      if (!referencedSet.has(id)) {
+        this.unregister(id);
+      }
+    }
   }
 }

@@ -15,6 +15,12 @@ declare namespace MathQuill {
     type EmbedOptions = v1.EmbedOptions;
     type EmbedOptionsData = v1.EmbedOptionsData;
 
+    enum UnmountReason {
+      LATEX_CHANGED = 'latex_changed',
+      MATHFIELD_DESTROYED = 'mathfield_destroyed',
+      EXPLICIT_UNREGISTER = 'explicit_unregister',
+    }
+
     type Config = Omit<v1.Config, 'substituteKeyboardEvents' | 'handlers'> & {
       handlers?: HandlerOptions;
     };
@@ -69,6 +75,9 @@ declare namespace MathQuill {
       setAriaPostLabel: (str: string, timeout?: number) => EditableMathQuill;
       ignoreNextMousedown: (func: () => boolean) => EditableMathQuill;
       clickAt: (x: number, y: number, el: HTMLElement) => EditableMathQuill;
+
+      // Foreign Object API
+      foreignObject(id: string, element: HTMLElement): EditableMathQuill;
     }
 
     interface API {
