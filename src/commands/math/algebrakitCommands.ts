@@ -22,15 +22,13 @@ class LogNL extends MathCommand {
       h('span', { class: 'mq-supsub mq-non-leaf mq-sup-only' }, [
         h.block('span', { class: 'mq-sup' }, blocks[0]),
       ]),
-      h('span', { class: 'mq-operator-name' }, [h.text('log')]),
+      h('span', { class: 'mq-operator-name' }, [h.text('log ')]),
       h('span', { class: 'mq-non-leaf' }, [
-        h('span', { class: 'mq-scaled mq-paren' }, [h.text('(')]),
         h.block('span', { class: 'mq-non-leaf' }, blocks[1]),
-        h('span', { class: 'mq-scaled mq-paren' }, [h.text(')')]),
       ]),
     ])
   );
-  textTemplate = ['lognl[', '](', ')'];
+  textTemplate = ['lognl[', ']'];
 
   parser() {
     return latexMathParser.optBlock
@@ -54,15 +52,13 @@ class LogNL extends MathCommand {
     if (MathQuill.latexSyntax === 'STANDARD') {
       ctx.latex += '\\ ^{';
       ctx.latex += childLatex[0];
-      ctx.latex += '}\\!\\log\\left(';
+      ctx.latex += '}\\!\\log ';
       ctx.latex += childLatex[1];
-      ctx.latex += '\\right)';
     } else {
       ctx.latex += '\\lognl[';
       ctx.latex += childLatex[0];
-      ctx.latex += ']{';
+      ctx.latex += ']';
       ctx.latex += childLatex[1];
-      ctx.latex += '}';
     }
 
     this.checkCursorContextClose(ctx);
