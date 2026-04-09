@@ -391,6 +391,13 @@ function getInterface(v: number): MathQuill.v3.API | MathQuill.v1.API {
       if (this.__controller.blurred) cursor.hide().parent.blur(cursor);
       return this;
     }
+    getForeignObject(id: string): HTMLElement | null {
+      return this.__controller.getForeignObjectRegistry().get(id);
+    }
+    registerForeignObject(id: string, element: HTMLElement) {
+      this.__controller.getForeignObjectRegistry().register(id, element);
+      return this;
+    }
     foreignObject(id: string, element: HTMLElement) {
       // Register the foreign object in the internal registry
       this.__controller.getForeignObjectRegistry().register(id, element);
