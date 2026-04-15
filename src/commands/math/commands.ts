@@ -1151,6 +1151,35 @@ const MixedFraction = (LatexCmds.MixedFraction = class extends Fraction {
     ])
   );
   textTemplate = ['MixedFraction[', '(', ')/(', ')]'];
+  finalizeTree() {
+    const whole = this.getEnd(L);
+    const numerator = this.blocks![1];
+    const denominator = this.getEnd(R);
+
+    this.upInto = denominator;
+    this.downInto = whole;
+
+    whole.downOutOf = denominator;
+    whole.upOutOf = numerator;
+
+    numerator.downOutOf = denominator;
+    numerator.upOutOf = whole;
+
+    denominator.upOutOf = numerator;
+
+    whole.ariaLabel = 'whole part';
+    numerator.ariaLabel = 'numerator';
+    denominator.ariaLabel = 'denominator';
+    if (this.getFracDepth() > 1) {
+      this.mathspeakTemplate = [
+        'StartNestedFraction,',
+        'NestedOver',
+        ', EndNestedFraction',
+      ];
+    } else {
+      this.mathspeakTemplate = ['StartFraction,', 'Over', ', EndFraction'];
+    }
+  }
   latexRecursive(ctx: LatexContext) {
     this.checkCursorContextOpen(ctx);
 
