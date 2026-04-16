@@ -362,6 +362,13 @@ function getInterface(v: number): MathQuill.v3.API | MathQuill.v1.API {
       });
       return this;
     }
+    getForeignObject(id: string): HTMLElement | null {
+      return this.__controller.getForeignObjectRegistry().get(id);
+    }
+    registerForeignObject(id: string, element: HTMLElement) {
+      this.__controller.getForeignObjectRegistry().register(id, element);
+      return this;
+    }
   }
 
   abstract class EditableField
@@ -389,13 +396,6 @@ function getInterface(v: number): MathQuill.v3.API | MathQuill.v1.API {
       this.__controller.scrollHoriz();
       const cursor = this.__controller.cursor;
       if (this.__controller.blurred) cursor.hide().parent.blur(cursor);
-      return this;
-    }
-    getForeignObject(id: string): HTMLElement | null {
-      return this.__controller.getForeignObjectRegistry().get(id);
-    }
-    registerForeignObject(id: string, element: HTMLElement) {
-      this.__controller.getForeignObjectRegistry().register(id, element);
       return this;
     }
     foreignObject(id: string, element: HTMLElement) {
