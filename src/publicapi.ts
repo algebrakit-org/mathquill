@@ -369,6 +369,9 @@ function getInterface(v: number): MathQuill.v3.API | MathQuill.v1.API {
       this.__controller.getForeignObjectRegistry().register(id, element);
       return this;
     }
+    unregisterForeignObject(id: string): boolean {
+      return this.__controller.getForeignObjectRegistry().unregister(id);
+    }
   }
 
   abstract class EditableField
@@ -397,13 +400,6 @@ function getInterface(v: number): MathQuill.v3.API | MathQuill.v1.API {
       const cursor = this.__controller.cursor;
       if (this.__controller.blurred) cursor.hide().parent.blur(cursor);
       return this;
-    }
-    foreignObject(id: string, element: HTMLElement) {
-      // Register the foreign object in the internal registry
-      this.__controller.getForeignObjectRegistry().register(id, element);
-
-      // Insert the LaTeX command at cursor position
-      return this.write('\\foreignobject{' + id + '}');
     }
     empty() {
       var root = this.__controller.root,

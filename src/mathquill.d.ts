@@ -82,7 +82,7 @@ declare namespace MathQuill {
         id: string,
         element: HTMLElement
       ): EditableMathQuill;
-      foreignObject(id: string, element: HTMLElement): EditableMathQuill;
+      unregisterForeignObject(id: string): boolean;
     }
 
     interface API {
