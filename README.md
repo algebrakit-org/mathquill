@@ -57,3 +57,51 @@ To export the new version of mathquill to the algebrakit widgets:
 ## Running unit tests
 Run `make test` in the root directory of this repo. After this process is finished running, 
 open the `./test/unit.html` file in a browser to view the results (no need to host the file in a webserver).
+
+## Contributing
+
+### Git hooks setup
+
+This repo uses [Husky](https://typicode.github.io/husky/) to run pre-commit checks (Prettier via lint-staged).
+
+Git clients like GitHub Desktop launch Git with a restricted `PATH` that may not include Node.js. If you see an error like `node: No such file or directory` or `npx: command not found` when committing, you need to extend the PATH for Husky by creating `~/.config/husky/init.sh`.
+
+Find your Node installation path first:
+
+| Setup | Command to find Node path |
+|-------|--------------------------|
+| [nvm](https://github.com/nvm-sh/nvm) (macOS/Linux) | `dirname $(nvm which current)` |
+| [nvm-windows](https://github.com/coreybutler/nvm-windows) | `where node` in Git Bash |
+| [Volta](https://volta.sh/) | `echo $HOME/.volta/bin` |
+| System Node (macOS/Linux) | `dirname $(which node)` |
+| System Node (Windows/Git Bash) | `where node` |
+
+Then create the Husky init script with your Node path. Examples:
+
+**macOS/Linux** — create `~/.config/husky/init.sh`:
+
+```sh
+# nvm
+NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh" --no-use
+export PATH="$(nvm which default | xargs dirname):$PATH"
+
+# Volta
+export PATH="$HOME/.volta/bin:$PATH"
+
+# System Node — replace with output of: dirname $(which node)
+export PATH="/usr/local/bin:$PATH"
+```
+
+**Windows (Git Bash)** — create `C:\Users\<YourUsername>\.config\husky\init.sh`:
+
+```sh
+# nvm-windows — replace with output of: where node (minus the \node.exe)
+export PATH="/c/Users/<YourUsername>/AppData/Roaming/nvm/v20.0.0:$PATH"
+
+# Volta
+export PATH="/c/Users/<YourUsername>/.volta/bin:$PATH"
+
+# System Node — replace with output of: where node (minus the \node.exe)
+export PATH="/c/Program Files/nodejs:$PATH"
+```

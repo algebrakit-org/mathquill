@@ -2,6 +2,10 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Setup
+
+For developer setup instructions, including Git hooks (Husky) configuration for different platforms and Node version managers, see the **Contributing** section in [README.md](README.md). For build prerequisites and platform-specific build setup, see [BUILDING](BUILDING).
+
 ## Development Commands
 
 ### Building
