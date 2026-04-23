@@ -360,6 +360,28 @@ function getCtrlSeqsFromBlock(block: NodeRef): string {
   return chars;
 }
 
+// Returns the shorthand spoken denominator word for simple integer fractions (e.g. "thirds"),
+// or an empty string when no shorthand applies.
+function getDenShorthand(numText: string, denText: string): string {
+  const isSingular = numText === '1' || numText === '-1';
+  if (denText === '2') return isSingular ? 'half' : 'halves';
+  if (denText === '3') return isSingular ? 'third' : 'thirds';
+  if (denText === '4') return isSingular ? 'quarter' : 'quarters';
+  if (denText === '5') return isSingular ? 'fifth' : 'fifths';
+  if (denText === '6') return isSingular ? 'sixth' : 'sixths';
+  if (denText === '7') return isSingular ? 'seventh' : 'sevenths';
+  if (denText === '8') return isSingular ? 'eighth' : 'eighths';
+  if (denText === '9') return isSingular ? 'ninth' : 'ninths';
+  if (denText === '10') return isSingular ? 'tenth' : 'tenths';
+  if (denText === '11') return isSingular ? 'eleventh' : 'elevenths';
+  if (denText === '12') return isSingular ? 'twelfth' : 'twelfths';
+  if (denText === '16') return isSingular ? 'sixteenth' : 'sixteenths';
+  if (denText === '100') return isSingular ? 'hundredth' : 'hundredths';
+  if (denText === '1000') return isSingular ? 'thousandth' : 'thousandths';
+  if (denText === '1000000') return isSingular ? 'millionth' : 'millionths';
+  return '';
+}
+
 Options.prototype.charsThatBreakOutOfSupSub = '';
 
 class SupSub extends MathCommand {
@@ -1021,25 +1043,7 @@ var Fraction =
           intRgx.test(numText) &&
           intRgx.test(denText)
         ) {
-          var isSingular = numText === '1' || numText === '-1';
-          var newDenSpeech = '';
-          if (denText === '2') {
-            newDenSpeech = isSingular ? 'half' : 'halves';
-          } else if (denText === '3') {
-            newDenSpeech = isSingular ? 'third' : 'thirds';
-          } else if (denText === '4') {
-            newDenSpeech = isSingular ? 'quarter' : 'quarters';
-          } else if (denText === '5') {
-            newDenSpeech = isSingular ? 'fifth' : 'fifths';
-          } else if (denText === '6') {
-            newDenSpeech = isSingular ? 'sixth' : 'sixths';
-          } else if (denText === '7') {
-            newDenSpeech = isSingular ? 'seventh' : 'sevenths';
-          } else if (denText === '8') {
-            newDenSpeech = isSingular ? 'eighth' : 'eighths';
-          } else if (denText === '9') {
-            newDenSpeech = isSingular ? 'ninth' : 'ninths';
-          }
+          var newDenSpeech = getDenShorthand(numText, denText);
           if (newDenSpeech !== '') {
             var output = '';
             // Handle the case of an integer followed by a simplified fraction such as 1\frac{1}{2}.
@@ -1151,6 +1155,64 @@ const MixedFraction = (LatexCmds.MixedFraction = class extends Fraction {
     ])
   );
   textTemplate = ['MixedFraction[', '(', ')/(', ')]'];
+  mathspeak(opts?: MathspeakOptions) {
+    const numText = getCtrlSeqsFromBlock(this.blocks![1]);
+    const denText = getCtrlSeqsFromBlock(this.blocks![2]);
+
+    if (
+      (!opts || !opts.ignoreShorthand) &&
+      intRgx.test(numText) &&
+      intRgx.test(denText)
+    ) {
+      const newDenSpeech = getDenShorthand(numText, denText);
+      if (newDenSpeech !== '') {
+        const wholeSpeech = this.blocks![0].mathspeak();
+        const numSpeech = this.blocks![1].mathspeak();
+        return `${wholeSpeech} and ${numSpeech} ${newDenSpeech}`;
+      }
+    }
+
+    const wholeSpeech = this.blocks![0].mathspeak();
+    const numSpeech = this.blocks![1].mathspeak();
+    const denSpeech = this.blocks![2].mathspeak();
+    if (this.getFracDepth() > 1) {
+      return `${wholeSpeech} StartNestedFraction, ${numSpeech} NestedOver ${denSpeech} , EndNestedFraction`;
+    }
+    return `${wholeSpeech} StartFraction, ${numSpeech} Over ${denSpeech} , EndFraction`;
+  }
+  finalizeTree() {
+    const whole = this.getEnd(L);
+    const numerator = this.blocks![1];
+    const denominator = this.getEnd(R);
+
+    this.upInto = denominator;
+    this.downInto = whole;
+
+    whole.downOutOf = denominator;
+    whole.upOutOf = numerator;
+
+    numerator.downOutOf = denominator;
+
+    denominator.upOutOf = numerator;
+
+    whole.ariaLabel = 'whole part';
+    numerator.ariaLabel = 'numerator';
+    denominator.ariaLabel = 'denominator';
+    if (this.getFracDepth() > 1) {
+      this.mathspeakTemplate = [
+        'StartNestedFraction,',
+        'NestedOver',
+        ', EndNestedFraction',
+      ];
+    } else {
+      this.mathspeakTemplate = [
+        ' ',
+        'StartFraction,',
+        'Over',
+        ', EndFraction ',
+      ];
+    }
+  }
   latexRecursive(ctx: LatexContext) {
     this.checkCursorContextOpen(ctx);
 
