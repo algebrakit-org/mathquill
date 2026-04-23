@@ -2,8 +2,12 @@
 // Styles for embedded external HTMLElements in math expressions
 
 .mq-foreign-object-container {
-  .inline-block;
-  vertical-align: middle;
+  // inline-flex so the container's baseline equals the baseline of its first
+  // flex item — when the embedded content is a MathQuill-rendered fraction,
+  // this anchors the outer math to that fraction's bar (matching how native
+  // MathQuill fractions align). vertical-align: middle would instead anchor
+  // to the geometric centre, which looks wrong for tall/asymmetric content.
+  display: inline-flex;
   margin: 0 0.2em;
 
   // Prevent MathQuill from applying math-specific styles to embedded content
