@@ -9,7 +9,7 @@
  * representation from the actual DOM structure and component lifecycle.
  */
 class ForeignObjectCommand extends MQSymbol {
-  private objectId: string = '';
+  public objectId: string = '';
   private registry: ForeignObjectRegistry | null;
 
   /**

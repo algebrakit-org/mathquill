@@ -142,6 +142,7 @@ declare namespace MathQuill {
       statelessClipboard?: boolean;
       onPaste?: () => void;
       onCut?: () => void;
+      confirmForeignObjectDelete?: (objectId: string) => boolean;
       overrideTypedText?: (text: string) => void;
       overrideKeystroke?: (key: string, event: KeyboardEvent) => void;
       autoOperatorNames?: string;
