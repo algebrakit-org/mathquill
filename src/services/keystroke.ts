@@ -361,13 +361,9 @@ class Controller_keystroke extends Controller_focusBlur {
 
     // Let the host veto deletion of a foreignobject embed (single-node delete only;
     // range-deletes go through notify('edit') and are not guarded here).
-    if (
-      !cursor.selection &&
-      cursorEl &&
-      (cursorEl.constructor as { isForeignObject?: boolean }).isForeignObject
-    ) {
+    if (!cursor.selection && cursorEl instanceof ForeignObjectCommand) {
       const confirmFn = cursor.options.confirmForeignObjectDelete;
-      const objectId = (cursorEl as { objectId?: string }).objectId;
+      const objectId = cursorEl.objectId;
       if (confirmFn && objectId && !confirmFn(objectId)) return this;
     }
 
