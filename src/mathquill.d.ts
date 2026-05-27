@@ -77,7 +77,12 @@ declare namespace MathQuill {
       clickAt: (x: number, y: number, el: HTMLElement) => EditableMathQuill;
 
       // Foreign Object API
-      foreignObject(id: string, element: HTMLElement): EditableMathQuill;
+      getForeignObject(id: string): HTMLElement | null;
+      registerForeignObject(
+        id: string,
+        element: HTMLElement
+      ): EditableMathQuill;
+      unregisterForeignObject(id: string): boolean;
     }
 
     interface API {
@@ -137,6 +142,7 @@ declare namespace MathQuill {
       statelessClipboard?: boolean;
       onPaste?: () => void;
       onCut?: () => void;
+      confirmForeignObjectDelete?: (objectId: string) => boolean;
       overrideTypedText?: (text: string) => void;
       overrideKeystroke?: (key: string, event: KeyboardEvent) => void;
       autoOperatorNames?: string;
