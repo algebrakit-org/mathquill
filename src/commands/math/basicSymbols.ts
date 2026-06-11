@@ -355,6 +355,12 @@ baseOptionProcessors.autoParenthesizedFunctions = function (cmds) {
 
 class Letter extends Variable {
   letter: string;
+  // When a letter originated from an explicit operator token in LaTeX
+  // (e.g. \sin or \operatorname{foo}), we keep the original word + group.
+  // autoUnItalicize() can then preserve that semantic boundary even when the
+  // surrounding run is one contiguous word like xsinx.
+  explicitOperatorName?: string;
+  explicitOperatorGroupId?: number;
 
   constructor(ch: string) {
     super(ch);
@@ -454,6 +460,65 @@ class Letter extends Variable {
     this.domFrag().toggleClass('mq-operator-name', !bool);
     return this;
   }
+  markExplicitOperatorName(operatorName: string, groupId: number) {
+    this.explicitOperatorName = operatorName;
+    this.explicitOperatorGroupId = groupId;
+    return this;
+  }
+  clearExplicitOperatorName() {
+    this.explicitOperatorName = undefined;
+    this.explicitOperatorGroupId = undefined;
+    return this;
+  }
+  private applyOperatorNameFormatting(
+    first: Letter,
+    last: Letter,
+    word: string
+  ) {
+    // Centralize visual + latex-serialization changes for operator names so
+    // explicit operators and auto-detected operators follow identical output rules.
+    for (
+      let letter: NodeRef = first;
+      letter instanceof Letter;
+      letter = letter[R]
+    ) {
+      letter.italicize(false);
+      if (letter === last) break;
+    }
+
+    const isBuiltIn = BuiltInOpNames.hasOwnProperty(word);
+    first.ctrlSeq = (isBuiltIn ? '\\' : '\\operatorname{') + first.ctrlSeq;
+    last.ctrlSeq += isBuiltIn ? ' ' : '}';
+
+    if (TwoWordOpNames.hasOwnProperty(word)) {
+      const lastL = last[L];
+      const lastLL = lastL && lastL[L];
+      const lastLLL = (lastLL && lastLL[L]) as MQNode;
+      lastLLL.domFrag().addClass('mq-last');
+    }
+    if (!this.shouldOmitPadding(first[L])) first.domFrag().addClass('mq-first');
+    if (!this.shouldOmitPadding(last[R])) {
+      if (last[R] instanceof SupSub) {
+        var supsub = last[R] as MQNode; // XXX monkey-patching, but what's the right thing here?
+        // Have operatorname-specific code in SupSub? A CSS-like language to style the
+        // math tree, but which ignores cursor and selection (which CSS can't)?
+        var respace =
+          (supsub.siblingCreated =
+          supsub.siblingDeleted =
+            function () {
+              supsub
+                .domFrag()
+                .toggleClass(
+                  'mq-after-operator-name',
+                  !(supsub[R] instanceof Bracket)
+                );
+            });
+        respace();
+      } else {
+        last.domFrag().toggleClass('mq-last', !(last[R] instanceof Bracket));
+      }
+    }
+  }
   finalizeTree(opts: CursorOptions, dir: Direction) {
     this.sharedSiblingMethod(opts, dir);
   }
@@ -473,18 +538,16 @@ class Letter extends Variable {
 
   autoUnItalicize(opts: CursorOptions) {
     var autoOps = opts.autoOperatorNames;
-    if (autoOps._maxLength === 0) return;
 
     //exit early if in simple subscript and disableAutoSubstitutionInSubscripts is set.
     if (this.shouldIgnoreSubstitutionInSimpleSubscript(opts)) {
       return;
     }
 
-    // want longest possible operator names, so join together entire contiguous
-    // sequence of letters
-    var str = this.letter;
-    for (var l = this[L]; l instanceof Letter; l = l[L]) str = l.letter + str;
-    for (var r = this[R]; r instanceof Letter; r = r[R]) str += r.letter;
+    var l: NodeRef = this[L];
+    while (l instanceof Letter) l = l[L];
+    var r: NodeRef = this[R];
+    while (r instanceof Letter) r = r[R];
 
     // removeClass and delete flags from all letters before figuring out
     // which, if any, are part of an operator name
@@ -503,58 +566,113 @@ class Letter extends Variable {
       }
     );
 
-    // algebrakit, mslob. Do not search commands in substrings, to allow entry of text like 'afstand' (which contains 'tan')
-    let word = str;
-    let first: NodeRef = lR || this.parent.getEnd(L);
-    let len = str.length;
-    let last: MQNode = undefined!;
+    // algebrakit, mslob. Do not search commands in substrings, to allow entry
+    // of text like 'afstand' (which contains 'tan'). Preserve explicit LaTeX
+    // operator commands (\\sin, \\cos, ... ) via operator group metadata.
+    const letters: Letter[] = [];
+    for (
+      let letter: NodeRef = lR || this.parent.getEnd(L);
+      letter;
+      letter = letter[R]
+    ) {
+      if (letter instanceof Letter) {
+        letters.push(letter);
+      } else {
+        break;
+      }
+    }
 
-    if (!first) return;
+    if (!letters.length) return;
 
-    if (autoOps.hasOwnProperty(word)) {
-      for (
-        let j: number = 0, letter: NodeRef = first;
-        first && j < len;
-        j += 1
-      ) {
-        if (letter instanceof Letter) {
-          letter.italicize(false);
-          last = letter;
+    let segmentStartIndex = -1;
+    const flushSegment = (endIndex: number) => {
+      if (segmentStartIndex < 0 || endIndex < segmentStartIndex) {
+        segmentStartIndex = -1;
+        return;
+      }
+
+      if (autoOps._maxLength !== 0) {
+        // Keep the AlgebraKit behavior: only match whole contiguous words.
+        // We intentionally do not scan substrings, so words like "afstand"
+        // do not accidentally turn "tan" into an operator.
+        const word = letters
+          .slice(segmentStartIndex, endIndex + 1)
+          .map((letter) => letter.letter)
+          .join('');
+        if (autoOps.hasOwnProperty(word)) {
+          this.applyOperatorNameFormatting(
+            letters[segmentStartIndex],
+            letters[endIndex],
+            word
+          );
         }
-        letter = letter ? letter[R] : 0;
       }
 
-      const isBuiltIn = BuiltInOpNames.hasOwnProperty(word);
-      first.ctrlSeq = (isBuiltIn ? '\\' : '\\operatorname{') + first.ctrlSeq;
-      last.ctrlSeq += isBuiltIn ? ' ' : '}';
+      segmentStartIndex = -1;
+    };
 
-      if (TwoWordOpNames.hasOwnProperty(word)) {
-        const lastL = last[L];
-        const lastLL = lastL && lastL[L];
-        const lastLLL = (lastLL && lastLL[L]) as MQNode;
-        lastLLL.domFrag().addClass('mq-last');
-      }
-      if (!this.shouldOmitPadding(first[L]))
-        first.domFrag().addClass('mq-first');
-      if (!this.shouldOmitPadding(last[R])) {
-        if (last[R] instanceof SupSub) {
-          var supsub = last[R] as MQNode; // XXX monkey-patching, but what's the right thing here?
-          // Have operatorname-specific code in SupSub? A CSS-like language to style the
-          // math tree, but which ignores cursor and selection (which CSS can't)?
-          var respace =
-            (supsub.siblingCreated =
-            supsub.siblingDeleted =
-              function () {
-                supsub
-                  .domFrag()
-                  .toggleClass(
-                    'mq-after-operator-name',
-                    !(supsub[R] instanceof Bracket)
-                  );
-              });
-          respace();
+    for (let i = 0; i < letters.length; i += 1) {
+      const letter = letters[i];
+      const hasExplicitOperatorName =
+        !!letter.explicitOperatorName &&
+        letter.explicitOperatorGroupId !== undefined;
+
+      if (hasExplicitOperatorName) {
+        flushSegment(i - 1);
+
+        const groupId = letter.explicitOperatorGroupId;
+        const expectedWord = letter.explicitOperatorName;
+        let groupEnd = i;
+        while (
+          groupEnd + 1 < letters.length &&
+          letters[groupEnd + 1].explicitOperatorGroupId === groupId
+        ) {
+          groupEnd += 1;
+        }
+
+        const actualWord = letters
+          .slice(i, groupEnd + 1)
+          .map((groupLetter) => groupLetter.letter)
+          .join('');
+
+        if (actualWord === expectedWord) {
+          this.applyOperatorNameFormatting(
+            letter,
+            letters[groupEnd],
+            actualWord
+          );
         } else {
-          last.domFrag().toggleClass('mq-last', !(last[R] instanceof Bracket));
+          // If the explicit token has been edited (e.g. sin -> six), drop the
+          // explicit marker and let this run be re-evaluated as plain text so we
+          // do not force stale LaTeX semantics onto user-edited content.
+          for (let j = i; j <= groupEnd; j += 1) {
+            letters[j].clearExplicitOperatorName();
+          }
+
+          segmentStartIndex = i;
+          const next = letters[groupEnd + 1];
+          const nextIsExplicitOperatorName =
+            !!next &&
+            !!next.explicitOperatorName &&
+            next.explicitOperatorGroupId !== undefined;
+          if (!next || nextIsExplicitOperatorName) {
+            flushSegment(groupEnd);
+          }
+        }
+
+        i = groupEnd;
+      } else {
+        if (segmentStartIndex < 0) {
+          segmentStartIndex = i;
+        }
+
+        const next = letters[i + 1];
+        const nextIsExplicitOperatorName =
+          !!next &&
+          !!next.explicitOperatorName &&
+          next.explicitOperatorGroupId !== undefined;
+        if (!next || nextIsExplicitOperatorName) {
+          flushSegment(i);
         }
       }
     }
@@ -587,6 +705,14 @@ var BuiltInOpNames: AutoDict = {}; // the set of operator names like \sin, \cos,
 Options.prototype.autoOperatorNames = defaultAutoOpNames();
 
 var TwoWordOpNames = { limsup: 1, liminf: 1, projlim: 1, injlim: 1 };
+// Global monotonic id used only to keep letters from the same explicit
+// operator token together during later auto-un-italicize passes.
+var explicitOperatorNameGroupId = 0;
+
+function nextExplicitOperatorNameGroupId() {
+  explicitOperatorNameGroupId += 1;
+  return explicitOperatorNameGroupId;
+}
 
 function defaultAutoOpNames() {
   const AutoOpNames: AutoDict = {
@@ -670,15 +796,27 @@ class OperatorName extends MQSymbol {
   }
   createLeftOf(cursor: Cursor) {
     var fn = this.ctrlSeq;
+    // One id per explicit token insertion so adjacent explicit operators are
+    // still treated as separate groups.
+    const groupId = nextExplicitOperatorNameGroupId();
     for (var i = 0; i < fn.length; i += 1) {
-      new Letter(fn.charAt(i)).createLeftOf(cursor);
+      new Letter(fn.charAt(i))
+        .markExplicitOperatorName(fn, groupId)
+        .createLeftOf(cursor);
     }
   }
   parser() {
     var fn = this.ctrlSeq;
     var block = new MathBlock();
+    // Assign one group id to all letters produced by this explicit operator token
+    // (e.g. \sin). This preserves the explicit operator boundary across reflow, so
+    // surrounding letters (like x in x\sin x) are not merged into the operator.
+    // This prevents 'x\sin x' from being reflowed into 'xsinx'.
+    const groupId = nextExplicitOperatorNameGroupId();
     for (var i = 0; i < fn.length; i += 1) {
-      new Letter(fn.charAt(i)).adopt(block, block.getEnd(R), 0);
+      new Letter(fn.charAt(i))
+        .markExplicitOperatorName(fn, groupId)
+        .adopt(block, block.getEnd(R), 0);
     }
     return Parser.succeed(block.children());
   }
@@ -711,6 +849,17 @@ LatexCmds.operatorname = class extends MathCommand {
       });
       if (isAllLetters && str === 'ans') {
         return AnsBuilder();
+      }
+      if (isAllLetters && str) {
+        // Preserve explicit \operatorname{...} intent across future formatting
+        // passes; this is separate from auto-detected operator names.
+        const groupId = nextExplicitOperatorNameGroupId();
+        children.each(function (child) {
+          if (child instanceof Letter) {
+            child.markExplicitOperatorName(str, groupId);
+          }
+          return undefined;
+        });
       }
       // In cases other than `ans`, just return the children directly
       return children;

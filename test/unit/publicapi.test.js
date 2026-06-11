@@ -225,6 +225,11 @@ suite('Public API', function () {
       assert.equal(mq.text(), '*2*3***4');
     });
 
+    test('.latex() preserves explicit trig commands', function () {
+      mq.latex('x \\sin x');
+      assert.equal(mq.latex(), 'x\\sin x');
+    });
+
     test('.moveToDirEnd(dir)', function () {
       mq.latex('a x^2 + b x + c = 0');
       assert.equal(mq.__controller.cursor[L].ctrlSeq, '0');
