@@ -356,10 +356,8 @@ baseOptionProcessors.autoParenthesizedFunctions = function (cmds) {
 class Letter extends Variable {
   letter: string;
   // When a letter originated from an explicit operator token in LaTeX
-  // (e.g. \sin or \operatorname{foo}), we keep the original word + group.
-  // autoUnItalicize() can then preserve that semantic boundary even when the
-  // surrounding run is one contiguous word like xsinx.
-  explicitOperatorName?: string;
+  // (e.g. \sin or \operatorname{foo}), we keep a token group id so
+  // autoUnItalicize() can preserve that boundary inside runs like xsinx.
   explicitOperatorGroupId?: number;
 
   constructor(ch: string) {
@@ -460,14 +458,8 @@ class Letter extends Variable {
     this.domFrag().toggleClass('mq-operator-name', !bool);
     return this;
   }
-  markExplicitOperatorName(operatorName: string, groupId: number) {
-    this.explicitOperatorName = operatorName;
+  markExplicitOperatorName(groupId: number) {
     this.explicitOperatorGroupId = groupId;
-    return this;
-  }
-  clearExplicitOperatorName() {
-    this.explicitOperatorName = undefined;
-    this.explicitOperatorGroupId = undefined;
     return this;
   }
   private applyOperatorNameFormatting(
@@ -613,15 +605,13 @@ class Letter extends Variable {
 
     for (let i = 0; i < letters.length; i += 1) {
       const letter = letters[i];
-      const hasExplicitOperatorName =
-        !!letter.explicitOperatorName &&
+      const hasExplicitOperatorGroup =
         letter.explicitOperatorGroupId !== undefined;
 
-      if (hasExplicitOperatorName) {
+      if (hasExplicitOperatorGroup) {
         flushSegment(i - 1);
 
         const groupId = letter.explicitOperatorGroupId;
-        const expectedWord = letter.explicitOperatorName;
         let groupEnd = i;
         while (
           groupEnd + 1 < letters.length &&
@@ -635,30 +625,7 @@ class Letter extends Variable {
           .map((groupLetter) => groupLetter.letter)
           .join('');
 
-        if (actualWord === expectedWord) {
-          this.applyOperatorNameFormatting(
-            letter,
-            letters[groupEnd],
-            actualWord
-          );
-        } else {
-          // If the explicit token has been edited (e.g. sin -> six), drop the
-          // explicit marker and let this run be re-evaluated as plain text so we
-          // do not force stale LaTeX semantics onto user-edited content.
-          for (let j = i; j <= groupEnd; j += 1) {
-            letters[j].clearExplicitOperatorName();
-          }
-
-          segmentStartIndex = i;
-          const next = letters[groupEnd + 1];
-          const nextIsExplicitOperatorName =
-            !!next &&
-            !!next.explicitOperatorName &&
-            next.explicitOperatorGroupId !== undefined;
-          if (!next || nextIsExplicitOperatorName) {
-            flushSegment(groupEnd);
-          }
-        }
+        this.applyOperatorNameFormatting(letter, letters[groupEnd], actualWord);
 
         i = groupEnd;
       } else {
@@ -668,9 +635,7 @@ class Letter extends Variable {
 
         const next = letters[i + 1];
         const nextIsExplicitOperatorName =
-          !!next &&
-          !!next.explicitOperatorName &&
-          next.explicitOperatorGroupId !== undefined;
+          !!next && next.explicitOperatorGroupId !== undefined;
         if (!next || nextIsExplicitOperatorName) {
           flushSegment(i);
         }
@@ -801,7 +766,7 @@ class OperatorName extends MQSymbol {
     const groupId = nextExplicitOperatorNameGroupId();
     for (var i = 0; i < fn.length; i += 1) {
       new Letter(fn.charAt(i))
-        .markExplicitOperatorName(fn, groupId)
+        .markExplicitOperatorName(groupId)
         .createLeftOf(cursor);
     }
   }
@@ -815,7 +780,7 @@ class OperatorName extends MQSymbol {
     const groupId = nextExplicitOperatorNameGroupId();
     for (var i = 0; i < fn.length; i += 1) {
       new Letter(fn.charAt(i))
-        .markExplicitOperatorName(fn, groupId)
+        .markExplicitOperatorName(groupId)
         .adopt(block, block.getEnd(R), 0);
     }
     return Parser.succeed(block.children());
@@ -856,7 +821,7 @@ LatexCmds.operatorname = class extends MathCommand {
         const groupId = nextExplicitOperatorNameGroupId();
         children.each(function (child) {
           if (child instanceof Letter) {
-            child.markExplicitOperatorName(str, groupId);
+            child.markExplicitOperatorName(groupId);
           }
           return undefined;
         });
