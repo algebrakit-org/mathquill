@@ -358,6 +358,15 @@ class Controller_keystroke extends Controller_focusBlur {
     prayDirection(dir);
     var cursor = this.cursor;
     var cursorEl = cursor[dir] as MQNode;
+
+    // Let the host veto deletion of a foreignobject embed (single-node delete only;
+    // range-deletes go through notify('edit') and are not guarded here).
+    if (!cursor.selection && cursorEl instanceof ForeignObjectCommand) {
+      const confirmFn = cursor.options.confirmForeignObjectDelete;
+      const objectId = cursorEl.objectId;
+      if (confirmFn && objectId && !confirmFn(objectId)) return this;
+    }
+
     var cursorElParent = cursor.parent.parent;
     var ctrlr = cursor.controller;
 
