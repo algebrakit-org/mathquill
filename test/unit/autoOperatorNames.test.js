@@ -66,6 +66,29 @@ suite('autoOperatorNames', function () {
     assertAutoOperatorNamesWork('scscscscscsc', 's\\csc s\\csc s\\csc');
   });
 
+  test('explicit operators stay intact between adjacent letters', function () {
+    mq.latex('x\\sin x');
+    assertLatex('explicit built-in operator survives parse', 'x\\sin x');
+
+    mq.latex('x\\operatorname{hcf}x');
+    assertLatex(
+      'explicit operatorname survives parse',
+      'x\\operatorname{hcf}x'
+    );
+  });
+
+  test('editing explicit operator drops explicit grouping metadata', function () {
+    mq.latex('x\\sin x');
+    mq.moveToLeftEnd().keystroke('Right').keystroke('Right').keystroke('Del');
+    assertLatex('deleting inside explicit built-in operator', 'xsnx');
+    mq.typedText('i');
+    assertLatex('reinserting char does not force operator formatting', 'xsinx');
+
+    mq.latex('x\\operatorname{hcf}x');
+    mq.moveToLeftEnd().keystroke('Right').keystroke('Right').keystroke('Del');
+    assertLatex('deleting inside explicit operatorname', 'xhfx');
+  });
+
   test('works in \\sum', function () {
     mq.typedText('sum');
     mq.typedText('sin');
