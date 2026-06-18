@@ -778,22 +778,22 @@ class MathBlock extends MathElement {
       return;
     }
 
-    // Build the longest run of plain letters immediately left of the cursor.
-    // l.ctrlSeq === l.letter guards against consuming letters that are already
-    // part of some other (non-plain) node.
+    // Build the contiguous run of plain letters left of the cursor, scanning one
+    // past maxLength. Only the WHOLE run may match, never a suffix, so a run
+    // longer than any dict entry is rejected below rather than matching its
+    // tail (e.g. "arcsin" must not become "arc\sin", "api" must not become
+    // "a\pi"). The extra letter is what reveals the run is too long.
+    // (l.ctrlSeq === l.letter skips letters already part of another node.)
     let str: string = '',
       l: NodeRef = cursor[L],
       i: number = 0;
-    while (l instanceof Letter && l.ctrlSeq === l.letter && i < maxLength) {
+    while (l instanceof Letter && l.ctrlSeq === l.letter && i <= maxLength) {
       str = l.letter + str;
       l = l[L];
       i += 1;
     }
+    if (str.length > maxLength) return;
     if (str.length === 0) return;
-
-    // Only match the whole contiguous run (not substrings), so e.g. "afstand"
-    // does not turn its trailing "tan" into an operator, and "api" does not
-    // become "a\pi".
     const replaceWith = (node: MathCommand, len: number) => {
       for (i = 1, l = cursor[L]; i < len; i += 1, l = (l as MQNode)[L]);
       new Fragment(l, cursor[L]).remove();
@@ -823,10 +823,31 @@ class MathBlock extends MathElement {
 
     // Otherwise, an operator name produces a single atomic OperatorName symbol.
     if (autoOps.hasOwnProperty(str)) {
-      return replaceWith(new OperatorName(str), str.length);
+      const node = replaceWith(new OperatorName(str), str.length);
+      this.autoParenthesizeOperator(cursor, str);
+      return node;
     }
 
     return;
+  }
+
+  // Auto-parenthesize an operator name that was just recognized on this same
+  // keystroke (e.g. 'sin' -> \sin\left(\right)). Driven from the recognition
+  // path so the recognition trigger (the space) is consumed by it, rather than
+  // being left over to land inside the freshly-created argument. Keeps today's
+  // dual gate: the name must be in BOTH autoParenthesizedFunctions AND
+  // autoOperatorNames (autoParenthesizedFunctions defaults to empty, so nothing
+  // auto-parenthesizes unless explicitly configured).
+  private autoParenthesizeOperator(cursor: Cursor, name: string) {
+    // already parenthesized
+    const right = cursor.parent.getEnd(R);
+    if (right instanceof Bracket && right.ctrlSeq === '\\left(') return;
+
+    const autoParenFns = cursor.options.autoParenthesizedFunctions;
+    if (!autoParenFns.hasOwnProperty(name)) return;
+    if (!cursor.options.autoOperatorNames.hasOwnProperty(name)) return;
+
+    cursor.parent.write(cursor, '(');
   }
 
   writeLatex(cursor: Cursor, latex: string) {

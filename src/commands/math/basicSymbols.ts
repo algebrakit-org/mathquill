@@ -357,51 +357,6 @@ class Letter extends Variable {
     super(ch);
     this.letter = ch;
   }
-  autoParenthesize(cursor: Cursor) {
-    //exit early if already parenthesized
-    var right = cursor.parent.getEnd(R);
-    if (right && right instanceof Bracket && right.ctrlSeq === '\\left(') {
-      return;
-    }
-
-    //exit early if in simple subscript and disableAutoSubstitutionInSubscripts is set.
-    if (this.shouldIgnoreSubstitutionInSimpleSubscript(cursor.options)) {
-      return;
-    }
-
-    //handle autoParenthesized functions
-    var str = '';
-    var l: NodeRef = this;
-    var i = 0;
-
-    var autoParenthesizedFunctions = cursor.options.autoParenthesizedFunctions;
-    var maxLength = autoParenthesizedFunctions._maxLength || 0;
-    var autoOperatorNames = cursor.options.autoOperatorNames;
-    while (l instanceof Letter && i < maxLength) {
-      (str = l.letter + str), (l = l[L]), (i += 1);
-    }
-    // check for an autoParenthesized functions, going thru substrings longest to shortest
-    // only allow autoParenthesized functions that are also autoOperatorNames
-    while (str.length) {
-      if (
-        autoParenthesizedFunctions.hasOwnProperty(str) &&
-        autoOperatorNames.hasOwnProperty(str)
-      ) {
-        return cursor.parent.write(cursor, '(');
-      }
-      str = str.slice(1);
-    }
-  }
-
-  createLeftOf(cursor: Cursor) {
-    super.createLeftOf(cursor);
-
-    // AL-1304: don't greedily convert auto commands / operator names while
-    // typing letters; conversion happens on the next non-letter keystroke (see
-    // MathBlock.handleAutoCommands). We still auto-parenthesize here, which can
-    // itself emit the '(' that triggers conversion.
-    this.autoParenthesize(cursor);
-  }
   italicize(bool: boolean) {
     this.isItalic = bool;
     this.isPartOfOperator = !bool;
@@ -450,7 +405,7 @@ for (var i = 0; i < BUILT_IN_OP_NAMES.length; i += 1) {
   BuiltInOpNames[BUILT_IN_OP_NAMES[i]] = 1;
 }
 
-// the set of operator names that MathQuill auto-unitalicizes by default; overridable
+// the set of operator names that MathQuill auto-converts to atomic blocks by default; overridable
 var DefaultOperatorNames = defaultAutoOpNames();
 Options.prototype.autoOperatorNames = DefaultOperatorNames;
 
