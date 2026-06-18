@@ -557,6 +557,18 @@ class MathBlock extends MathElement {
             speechArray.push(tempOp + ' ');
             tempOp = '';
           }
+          // Atomic operator-name symbols carry their own word; apply the
+          // autoOperatorNames speech-friendly alias (e.g. cos -> "cosine") here,
+          // where the configured options are available.
+          if (cmd instanceof OperatorName) {
+            var op = cmd.operatorName;
+            if (autoOps._maxLength! > 0) {
+              var alias = autoOps[op.toLowerCase()];
+              if (typeof alias === 'string') op = alias;
+            }
+            speechArray.push(' ' + op + ' ');
+            return speechArray;
+          }
           var mathspeakText = cmd.mathspeak();
           var cmdText = cmd.ctrlSeq;
           if (
@@ -744,50 +756,76 @@ class MathBlock extends MathElement {
   }
 
   handleAutoCommands(cursor: Cursor, ch: string): any {
+    // Both autoCommands (e.g. pi -> \pi) and autoOperatorNames (e.g. sin ->
+    // \sin) convert a run of typed letters into a single atomic node, triggered
+    // by the first non-letter keystroke. mslob: trigger only after a non-letter.
+    if (/[a-z]/i.test(ch)) return;
+
     const autoCmds = cursor.options.autoCommands;
-    const maxLength = autoCmds._maxLength;
+    const autoOps = cursor.options.autoOperatorNames;
+    const maxLength = Math.max(
+      autoCmds._maxLength || 0,
+      autoOps._maxLength || 0
+    );
+    if (maxLength <= 0) return;
 
-    if (maxLength && maxLength > 0 && !/[a-z]/i.test(ch)) {
-      // mslob: trigger autocommand only after non-letter
+    // Skip auto-substitution inside simple subscripts when configured to.
+    const leftNode = cursor[L];
+    if (
+      leftNode &&
+      leftNode.shouldIgnoreSubstitutionInSimpleSubscript(cursor.options)
+    ) {
+      return;
+    }
 
-      let str: string = '',
-        l: NodeRef = cursor[L],
-        i: number = 0;
-      while (l instanceof Letter && l.ctrlSeq === l.letter && i < maxLength) {
-        str = l.letter + str;
-        l = l[L];
-        i += 1;
-      }
-      // check for an autocommand, check only longest string of letters (so not api --> a\pi)
-      if (str.length > 0 && autoCmds.hasOwnProperty(str)) {
-        for (
-          i = 1, l = cursor[L];
-          i < str.length;
-          i += 1, l = (l as MQNode)[L]
-        );
-        new Fragment(l, cursor[L]).remove();
-        cursor[L] = l ? l[L] : 0;
+    // Build the longest run of plain letters immediately left of the cursor.
+    // l.ctrlSeq === l.letter guards against consuming letters that are already
+    // part of some other (non-plain) node.
+    let str: string = '',
+      l: NodeRef = cursor[L],
+      i: number = 0;
+    while (l instanceof Letter && l.ctrlSeq === l.letter && i < maxLength) {
+      str = l.letter + str;
+      l = l[L];
+      i += 1;
+    }
+    if (str.length === 0) return;
 
-        let cmd = autoCmds[str];
-        if (cmd == 1) cmd = str; // mslob: can be removed once old autocmds implementation is gone
+    // Only match the whole contiguous run (not substrings), so e.g. "afstand"
+    // does not turn its trailing "tan" into an operator, and "api" does not
+    // become "a\pi".
+    const replaceWith = (node: MathCommand, len: number) => {
+      for (i = 1, l = cursor[L]; i < len; i += 1, l = (l as MQNode)[L]);
+      new Fragment(l, cursor[L]).remove();
+      cursor[L] = l ? l[L] : 0;
+      node.createLeftOf(cursor);
+      return node;
+    };
 
-        var cmdKlass = (LatexCmds as LatexCmdsSingleChar)[cmd];
-        if (cmdKlass) {
-          let node: MathCommand;
-          if (cmdKlass.constructor) {
-            var actualClass = cmdKlass as typeof MathCommand; // TODO - figure out how to know the difference
-            node = new actualClass(cmd);
-          } else {
-            var builder = cmdKlass as (c: string) => MathCommand; // TODO - figure out how to know the difference
-            node = builder(cmd);
-          }
-          node?.createLeftOf(cursor);
-          return node;
+    // autoCommands take precedence (they may map to arbitrary LatexCmds).
+    if (autoCmds.hasOwnProperty(str)) {
+      let cmd = autoCmds[str];
+      if (cmd == 1) cmd = str; // mslob: can be removed once old autocmds implementation is gone
+
+      var cmdKlass = (LatexCmds as LatexCmdsSingleChar)[cmd];
+      if (cmdKlass) {
+        let node: MathCommand;
+        if (cmdKlass.constructor) {
+          var actualClass = cmdKlass as typeof MathCommand; // TODO - figure out how to know the difference
+          node = new actualClass(cmd);
         } else {
-          // error
+          var builder = cmdKlass as (c: string) => MathCommand; // TODO - figure out how to know the difference
+          node = builder(cmd);
         }
+        return replaceWith(node, str.length);
       }
     }
+
+    // Otherwise, an operator name produces a single atomic OperatorName symbol.
+    if (autoOps.hasOwnProperty(str)) {
+      return replaceWith(new OperatorName(str), str.length);
+    }
+
     return;
   }
 

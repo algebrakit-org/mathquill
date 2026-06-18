@@ -53,6 +53,17 @@ var assert = (function () {
         explanation: 'expected ' + fn + ' to throw an error',
       });
     },
+    doesNotThrow: function (fn: Function, message?: string) {
+      try {
+        fn();
+      } catch (e) {
+        fail({
+          message: message,
+          explanation:
+            'expected ' + fn + ' not to throw an error, but it threw ' + e,
+        });
+      }
+    },
     fail: function (message?: string) {
       fail({ message: message, explanation: 'generic fail' });
     },

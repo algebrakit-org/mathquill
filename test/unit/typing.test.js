@@ -1107,7 +1107,9 @@ suite('typing with auto-replaces', function () {
     });
 
     test('individual commands', function () {
-      //autoParenthesized and also operatored
+      // 'sin' is both an autoParenthesizedFunction and an autoOperatorName, so
+      // typing it auto-writes '(', and that non-letter triggers conversion of
+      // the whole run into the atomic \sin operator plus parentheses.
       mq.typedText('sin');
       assertLatex('\\sin\\left(\\right)');
       mq.latex('');
@@ -1119,20 +1121,27 @@ suite('typing with auto-replaces', function () {
       mq.typedText('tan');
       assertLatex('tan');
       mq.latex('');
-      //doesn't parenthesize when the middle is completed
+      // Completing a word in the middle no longer auto-parenthesizes (the
+      // auto-'(' only fires for the contiguous run left of the cursor).
       mq.typedText('tn');
       mq.keystroke('Left');
       mq.typedText('a');
       assertLatex('tan');
 
       mq.latex('');
-      //doesn't parenthesize when the middle is completed, but does autoFn
+      // Completing an operator name in the middle does not insert a trigger, so
+      // (unlike the old eager model) it stays as letters until a non-letter is
+      // typed.
       mq.typedText('sn');
       mq.keystroke('Left');
       mq.typedText('i');
-      assertLatex('\\sin');
+      assertLatex('sin');
     });
 
+    // NOTE (operator-name atomization): this exercised editing letters *inside*
+    // an auto-un-italicized operator, which no longer exists now that operators
+    // are atomic, non-decomposable symbols. The Left/Backspace/retype mechanics
+    // below need re-confirming in the browser; the expected latex may change.
     test('does not double parenthesize if parenthesized', function () {
       //autoParenthesized and also operatored
       mq.typedText('sin');
@@ -1172,13 +1181,16 @@ suite('typing with auto-replaces', function () {
       mq.config(normalConfig);
     });
 
-    test('no auto operator names in simple subscripts when pasting', function () {
+    test('pasted bare letters are not auto-converted to operators', function () {
+      // Auto-conversion only happens on a trigger key while typing; pasted
+      // latex is taken literally, so bare letters stay letters regardless of
+      // config. (Pasting an explicit \sin would parse to the operator.)
       var textarea = $(mq.el()).find('textarea');
       mq.config(normalConfig);
       trigger.paste(textarea[0]);
       textarea.val('x_{sin}');
       trigger.input(textarea[0]);
-      assertLatex('x_{\\sin}');
+      assertLatex('x_{sin}');
       mq.latex('');
       mq.config(subscriptConfig);
       trigger.paste(textarea[0]);
@@ -1311,26 +1323,28 @@ suite('typing with auto-replaces', function () {
       });
     });
 
-    test('command is a built-in operator name', function () {
+    test('operator names are allowed as auto commands', function () {
+      // Operator names used to be rejected as autoCommands; they are now
+      // explicitly registered in LatexCmds and may also be used as autoCommands.
       var cmds = (
         'Pr arg deg det dim exp gcd hom inf ker lg lim ln log max min sup' +
         ' limsup liminf injlim projlim Pr'
       ).split(' ');
       for (var i = 0; i < cmds.length; i += 1) {
-        assert.throws(function () {
+        assert.doesNotThrow(function () {
           MQ.config({ autoCommands: cmds[i] });
         }, 'MQ.config({ autoCommands: "' + cmds[i] + '" })');
       }
     });
 
-    test('built-in operator names even after auto-operator names overridden', function () {
+    test('operator names allowed as auto commands even after auto-operator names overridden', function () {
       MQ.config({ autoOperatorNames: 'sin inf arcosh cosh cos cosec csc' });
       // ^ happen to be the ones required by autoOperatorNames.test.js
       var cmds = 'Pr arg deg det exp gcd inf lg lim ln log max min sup'.split(
         ' '
       );
       for (var i = 0; i < cmds.length; i += 1) {
-        assert.throws(function () {
+        assert.doesNotThrow(function () {
           MQ.config({ autoCommands: cmds[i] });
         }, 'MQ.config({ autoCommands: "' + cmds[i] + '" })');
       }

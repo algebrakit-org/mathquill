@@ -11,7 +11,9 @@ suite('ans command', function () {
   });
 
   test('Typing and backspacing', function () {
-    mq.typedText('2+ans');
+    // Conversion happens on the trigger key (the trailing space), producing a
+    // single atomic operator symbol that backspace deletes whole.
+    mq.typedText('2+ans ');
     assert.equal(mq.latex(), '2+\\operatorname{ans}');
     mq.keystroke('Backspace');
     assert.equal(mq.latex(), '2+');
@@ -20,5 +22,10 @@ suite('ans command', function () {
   test('Parsing', function () {
     mq.latex('\\operatorname{ans}');
     assert.equal(mq.latex(), '\\operatorname{ans}');
+  });
+
+  test('renders as an operator name', function () {
+    mq.latex('\\operatorname{ans}');
+    assert.equal($(mq.el()).find('.mq-operator-name').text(), 'ans');
   });
 });

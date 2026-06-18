@@ -312,9 +312,6 @@ baseOptionProcessors.autoCommands = function (
       throw 'autocommand "' + cmd + '" not minimum length of 2';
     }
 
-    if (LatexCmds[cmd] === OperatorName) {
-      throw '"' + cmd + '" is a built-in operator name';
-    }
     dict[cmd] = _cmds[cmd];
     maxLength = Math.max(maxLength, cmd.length);
   }
@@ -360,51 +357,6 @@ class Letter extends Variable {
     super(ch);
     this.letter = ch;
   }
-  checkAutoCmds(cursor: Cursor) {
-    //exit early if in simple subscript and disableAutoSubstitutionInSubscripts is set.
-    if (this.shouldIgnoreSubstitutionInSimpleSubscript(cursor.options)) {
-      return;
-    }
-
-    //handle autoCommands
-    var autoCmds = cursor.options.autoCommands;
-    var maxLength = autoCmds._maxLength || 0;
-    if (maxLength > 0) {
-      // want longest possible autocommand, so join together longest
-      // sequence of letters
-      var str = '';
-      var l: NodeRef = this;
-      var i = 0;
-      // FIXME: l.ctrlSeq === l.letter checks if first or last in an operator name
-      while (l instanceof Letter && l.ctrlSeq === l.letter && i < maxLength) {
-        str = l.letter + str;
-        l = l[L];
-        i += 1;
-      }
-      // check for an autocommand, going thru substrings longest to shortest
-      while (str.length) {
-        if (autoCmds.hasOwnProperty(str)) {
-          l = this;
-          for (i = 1; l && i < str.length; i += 1, l = l[L]);
-
-          new Fragment(l, this).remove();
-          cursor[L] = (l as MQNode)[L];
-
-          var cmd = LatexCmds[str];
-          var node;
-          if (isMQNodeClass(cmd)) {
-            node = new (cmd as typeof TempSingleCharNode)(str); // TODO - How do we know that this class expects a single str input?
-          } else {
-            node = cmd(str);
-          }
-
-          return node.createLeftOf(cursor);
-        }
-        str = str.slice(1);
-      }
-    }
-  }
-
   autoParenthesize(cursor: Cursor) {
     //exit early if already parenthesized
     var right = cursor.parent.getEnd(R);
@@ -444,8 +396,10 @@ class Letter extends Variable {
   createLeftOf(cursor: Cursor) {
     super.createLeftOf(cursor);
 
-    // AL-1304 don't greedily parse auto operators, wait for non-letter key to process commands.
-    // this.checkAutoCmds(cursor);
+    // AL-1304: don't greedily convert auto commands / operator names while
+    // typing letters; conversion happens on the next non-letter keystroke (see
+    // MathBlock.handleAutoCommands). We still auto-parenthesize here, which can
+    // itself emit the '(' that triggers conversion.
     this.autoParenthesize(cursor);
   }
   italicize(bool: boolean) {
@@ -454,177 +408,61 @@ class Letter extends Variable {
     this.domFrag().toggleClass('mq-operator-name', !bool);
     return this;
   }
-  finalizeTree(opts: CursorOptions, dir: Direction) {
-    this.sharedSiblingMethod(opts, dir);
-  }
-  siblingDeleted(opts: CursorOptions, dir: Direction) {
-    this.sharedSiblingMethod(opts, dir);
-  }
-  siblingCreated(opts: CursorOptions, dir: Direction) {
-    this.sharedSiblingMethod(opts, dir);
-  }
-
-  sharedSiblingMethod(opts: CursorOptions, dir: Direction) {
-    // don't auto-un-italicize if the sibling to my right changed (dir === R or
-    // undefined) and it's now a Letter, it will un-italicize everyone
-    if (dir !== L && this[R] instanceof Letter) return;
-    this.autoUnItalicize(opts);
-  }
-
-  autoUnItalicize(opts: CursorOptions) {
-    var autoOps = opts.autoOperatorNames;
-    if (autoOps._maxLength === 0) return;
-
-    //exit early if in simple subscript and disableAutoSubstitutionInSubscripts is set.
-    if (this.shouldIgnoreSubstitutionInSimpleSubscript(opts)) {
-      return;
-    }
-
-    // want longest possible operator names, so join together entire contiguous
-    // sequence of letters
-    var str = this.letter;
-    for (var l = this[L]; l instanceof Letter; l = l[L]) str = l.letter + str;
-    for (var r = this[R]; r instanceof Letter; r = r[R]) str += r.letter;
-
-    // removeClass and delete flags from all letters before figuring out
-    // which, if any, are part of an operator name
-    var lR = l && l[R];
-    var rL = r && r[L];
-
-    new Fragment(lR || this.parent.getEnd(L), rL || this.parent.getEnd(R)).each(
-      function (el) {
-        if (el instanceof Letter) {
-          el.italicize(true)
-            .domFrag()
-            .removeClass('mq-first mq-last mq-followed-by-supsub');
-          el.ctrlSeq = el.letter;
-        }
-        return undefined;
-      }
-    );
-
-    // algebrakit, mslob. Do not search commands in substrings, to allow entry of text like 'afstand' (which contains 'tan')
-    let word = str;
-    let first: NodeRef = lR || this.parent.getEnd(L);
-    let len = str.length;
-    let last: MQNode = undefined!;
-
-    if (!first) return;
-
-    if (autoOps.hasOwnProperty(word)) {
-      for (
-        let j: number = 0, letter: NodeRef = first;
-        first && j < len;
-        j += 1
-      ) {
-        if (letter instanceof Letter) {
-          letter.italicize(false);
-          last = letter;
-        }
-        letter = letter ? letter[R] : 0;
-      }
-
-      const isBuiltIn = BuiltInOpNames.hasOwnProperty(word);
-      first.ctrlSeq = (isBuiltIn ? '\\' : '\\operatorname{') + first.ctrlSeq;
-      last.ctrlSeq += isBuiltIn ? ' ' : '}';
-
-      if (TwoWordOpNames.hasOwnProperty(word)) {
-        const lastL = last[L];
-        const lastLL = lastL && lastL[L];
-        const lastLLL = (lastLL && lastLL[L]) as MQNode;
-        lastLLL.domFrag().addClass('mq-last');
-      }
-      if (!this.shouldOmitPadding(first[L]))
-        first.domFrag().addClass('mq-first');
-      if (!this.shouldOmitPadding(last[R])) {
-        if (last[R] instanceof SupSub) {
-          var supsub = last[R] as MQNode; // XXX monkey-patching, but what's the right thing here?
-          // Have operatorname-specific code in SupSub? A CSS-like language to style the
-          // math tree, but which ignores cursor and selection (which CSS can't)?
-          var respace =
-            (supsub.siblingCreated =
-            supsub.siblingDeleted =
-              function () {
-                supsub
-                  .domFrag()
-                  .toggleClass(
-                    'mq-after-operator-name',
-                    !(supsub[R] instanceof Bracket)
-                  );
-              });
-          respace();
-        } else {
-          last.domFrag().toggleClass('mq-last', !(last[R] instanceof Bracket));
-        }
-      }
-    }
-  }
-
-  shouldOmitPadding(node: NodeRef) {
-    // omit padding if no node
-    if (!node) return true;
-
-    // do not add padding between letter and '.'
-    if (node.ctrlSeq === '.') return true;
-
-    // do not add padding between letter and binary operator. The
-    // binary operator already has padding
-    if (node instanceof BinaryOperator) return true;
-
-    if (node instanceof SummationNotation) return true;
-
-    return false;
-  }
 }
-var BuiltInOpNames: AutoDict = {}; // the set of operator names like \sin, \cos, etc that
-// are built-into LaTeX, see Section 3.17 of the Short Math Guide: http://tinyurl.com/jm9okjc
-// MathQuill auto-unitalicizes some operator names not in that set, like 'hcf'
-// and 'arsinh', which must be exported as \operatorname{hcf} and
-// \operatorname{arsinh}. Note: over/under line/arrow \lim variants like
-// \varlimsup are not supported
+// The default operator names, written out explicitly so that every macro that
+// MathQuill recognizes is visible in source and registered as a `\name` command
+// (see the LatexCmds registration below) rather than being inferred from a
+// generative loop.
+//
+// BUILT_IN_OP_NAMES are real LaTeX operators (Section 3.17 of the Short Math
+// Guide: http://tinyurl.com/jm9okjc); they serialize as `\sin` etc.
+//
+// NONSTANDARD_OP_NAMES are not real LaTeX commands; they are auto-unitalicized
+// and serialize as `\operatorname{hcf}`, `\operatorname{arsinh}`, etc. Most of
+// the trig entries are the systematic arc-/-h/ar--h/arc--h variants of
+// 'sin cos tan sec cosec csc cotan cot ctg'; 'gcf hcf lcm proj span' are kept
+// for compat with nonstandard LaTeX exported by MathQuill before #247. Note:
+// over/under line/arrow \lim variants like \varlimsup are not supported.
+//
+// prettier-ignore
+const BUILT_IN_OP_NAMES = [
+  'Pr', 'arccos', 'arcsin', 'arctan', 'arg', 'cos', 'cosh', 'cot', 'coth',
+  'csc', 'deg', 'det', 'dim', 'exp', 'gcd', 'hom', 'inf', 'injlim', 'ker',
+  'lg', 'lim', 'liminf', 'limsup', 'ln', 'log', 'max', 'min', 'projlim',
+  'sec', 'sin', 'sinh', 'sup', 'tan', 'tanh',
+];
+// prettier-ignore
+const NONSTANDARD_OP_NAMES = [
+  'arccosec', 'arccosech', 'arccosh', 'arccot', 'arccotan', 'arccotanh',
+  'arccoth', 'arccsc', 'arccsch', 'arcctg', 'arcctgh', 'arcosech', 'arcosh',
+  'arcotanh', 'arcoth', 'arcsch', 'arcsec', 'arcsech', 'arcsinh', 'arctanh',
+  'arctgh', 'arsech', 'arsinh', 'artanh', 'cosec', 'cosech', 'cotan', 'cotanh',
+  'csch', 'ctg', 'ctgh', 'gcf', 'hcf', 'lcm', 'proj', 'sech', 'span',
+];
+// The full set of operator names (built-in + nonstandard), the source of truth
+// for both autoOperatorNames and the LatexCmds command registration.
+const DEFAULT_OP_NAMES = BUILT_IN_OP_NAMES.concat(NONSTANDARD_OP_NAMES);
+
+var BuiltInOpNames: AutoDict = {}; // the set of operator names like \sin, \cos
+// that are built into LaTeX; used to decide `\sin` vs `\operatorname{...}` on
+// serialization.
+for (var i = 0; i < BUILT_IN_OP_NAMES.length; i += 1) {
+  BuiltInOpNames[BUILT_IN_OP_NAMES[i]] = 1;
+}
 
 // the set of operator names that MathQuill auto-unitalicizes by default; overridable
-Options.prototype.autoOperatorNames = defaultAutoOpNames();
-
-var TwoWordOpNames = { limsup: 1, liminf: 1, projlim: 1, injlim: 1 };
+var DefaultOperatorNames = defaultAutoOpNames();
+Options.prototype.autoOperatorNames = DefaultOperatorNames;
 
 function defaultAutoOpNames() {
-  const AutoOpNames: AutoDict = {
-    _maxLength: 9,
-  };
-  var mostOps = (
-    'arg deg det dim exp gcd hom inf ker lg lim ln log max min sup' +
-    ' limsup liminf injlim projlim Pr'
-  ).split(' ');
-  for (var i = 0; i < mostOps.length; i += 1) {
-    BuiltInOpNames[mostOps[i]] = AutoOpNames[mostOps[i]] = 1;
+  const AutoOpNames: AutoDict = { _maxLength: 0 };
+  var maxLength = 0;
+  for (var i = 0; i < DEFAULT_OP_NAMES.length; i += 1) {
+    var name = DEFAULT_OP_NAMES[i];
+    AutoOpNames[name] = 1;
+    maxLength = Math.max(maxLength, name.length);
   }
-
-  var builtInTrigs =
-    'sin cos tan arcsin arccos arctan sinh cosh tanh sec csc cot coth'.split(
-      // why coth but not sech and csch, LaTeX?
-      ' '
-    );
-  for (var i = 0; i < builtInTrigs.length; i += 1) {
-    BuiltInOpNames[builtInTrigs[i]] = 1;
-  }
-
-  var autoTrigs = 'sin cos tan sec cosec csc cotan cot ctg'.split(' ');
-  for (var i = 0; i < autoTrigs.length; i += 1) {
-    AutoOpNames[autoTrigs[i]] =
-      AutoOpNames['arc' + autoTrigs[i]] =
-      AutoOpNames[autoTrigs[i] + 'h'] =
-      AutoOpNames['ar' + autoTrigs[i] + 'h'] =
-      AutoOpNames['arc' + autoTrigs[i] + 'h'] =
-        1;
-  }
-
-  // compat with some of the nonstandard LaTeX exported by MathQuill
-  // before #247. None of these are real LaTeX commands so, seems safe
-  var moreNonstandardOps = 'gcf hcf lcm proj span'.split(' ');
-  for (var i = 0; i < moreNonstandardOps.length; i += 1) {
-    AutoOpNames[moreNonstandardOps[i]] = 1;
-  }
+  AutoOpNames._maxLength = maxLength;
   return AutoOpNames;
 }
 
@@ -663,31 +501,88 @@ baseOptionProcessors.autoOperatorNames = function (cmds) {
   dict._maxLength = maxLength;
   return dict;
 };
+// A monolithic, atomic operator name (\sin, \cos, \operatorname{gcf}, ...).
+// Unlike the historical implementation, this is a single non-decomposable
+// symbol (like \pi): it renders as one element, deletes in a single backspace,
+// and is never broken back into individual editable letters. Built-in LaTeX
+// operators serialize as `\sin`; nonstandard ones as `\operatorname{name}`.
 class OperatorName extends MQSymbol {
-  ctrlSeq: string;
+  // The bare operator word (e.g. 'sin'), used for text/mathspeak and to let
+  // MathBlock.mathspeak() apply the autoOperatorNames speech-friendly alias.
+  operatorName: string;
+
   constructor(fn?: string) {
-    super(fn || '');
+    const word = fn || '';
+    const isBuiltIn = BuiltInOpNames.hasOwnProperty(word);
+    // LaTeX control sequence: real ops round-trip as `\sin `, nonstandard ones
+    // as `\operatorname{gcf}`.
+    const ctrlSeq = isBuiltIn
+      ? '\\' + word + ' '
+      : '\\operatorname{' + word + '}';
+    super(
+      ctrlSeq,
+      h('span', { class: 'mq-operator-name' }, [h.text(word)]),
+      word,
+      word
+    );
+    this.operatorName = word;
   }
-  createLeftOf(cursor: Cursor) {
-    var fn = this.ctrlSeq;
-    for (var i = 0; i < fn.length; i += 1) {
-      new Letter(fn.charAt(i)).createLeftOf(cursor);
+
+  // Reproduce the operator-name spacing the old per-letter renderer achieved
+  // with mq-first/mq-last: a 0.2em gap from adjacent content, but not from
+  // punctuation, binary operators, summation notation, or brackets.
+  private updatePadding() {
+    const left = this[L];
+    const right = this[R];
+    this.domFrag().toggleClass('mq-first', !this.shouldOmitPadding(left));
+
+    // A trailing sup/subscript visually attaches to the operator, so (matching
+    // the old renderer) carry the right-hand gap on the supsub itself unless a
+    // bracket follows it; otherwise the operator carries its own right gap.
+    if (right instanceof SupSub) {
+      this.domFrag().removeClass('mq-last');
+      right
+        .domFrag()
+        .toggleClass('mq-after-operator-name', !(right[R] instanceof Bracket));
+    } else {
+      const omitRight =
+        this.shouldOmitPadding(right) || right instanceof Bracket;
+      this.domFrag().toggleClass('mq-last', !omitRight);
     }
   }
-  parser() {
-    var fn = this.ctrlSeq;
-    var block = new MathBlock();
-    for (var i = 0; i < fn.length; i += 1) {
-      new Letter(fn.charAt(i)).adopt(block, block.getEnd(R), 0);
-    }
-    return Parser.succeed(block.children());
+  private shouldOmitPadding(node: NodeRef) {
+    if (!node) return true;
+    if (node.ctrlSeq === '.') return true;
+    if (node instanceof BinaryOperator) return true;
+    if (node instanceof SummationNotation) return true;
+    return false;
+  }
+  finalizeTree(_opts: CursorOptions, _dir?: Direction) {
+    this.updatePadding();
+  }
+  siblingCreated(_opts: CursorOptions, _dir: Direction) {
+    this.updatePadding();
+  }
+  siblingDeleted(_opts: CursorOptions, _dir: Direction) {
+    this.updatePadding();
   }
 }
 
-for (var fn in Options.prototype.autoOperatorNames)
-  if (Options.prototype.autoOperatorNames.hasOwnProperty(fn)) {
-    (LatexCmds as LatexCmdsAny)[fn as string] = OperatorName;
-  }
+// Explicitly register every default operator name (built-in LaTeX ops like
+// \sin as well as nonstandard ones like \gcf) as a `\name` command in
+// LatexCmds, iterating the explicit DEFAULT_OP_NAMES list. Each operator that
+// round-trips as \operatorname{name} therefore also has a \name alias.
+// Registering explicitly (rather than inferring from the user-overridable
+// autoOperatorNames option) keeps the command table independent of that option
+// and lets these names also be used as autoCommands.
+for (var i = 0; i < DEFAULT_OP_NAMES.length; i += 1) {
+  (LatexCmds as LatexCmdsAny)[DEFAULT_OP_NAMES[i]] = OperatorName;
+}
+
+// `ans` is not an autoOperatorName, but \operatorname{ans} / the \ans macro are
+// supported as a plain atomic operator symbol (it used to have a bespoke
+// AnsBuilder; OperatorName now covers it).
+(LatexCmds as LatexCmdsAny).ans = OperatorName;
 
 LatexCmds.operatorname = class extends MathCommand {
   createLeftOf() {}
@@ -696,8 +591,6 @@ LatexCmds.operatorname = class extends MathCommand {
   }
   parser() {
     return latexMathParser.block.map(function (b) {
-      // Check for the special case of \operatorname{ans}, which has
-      // a special html representation
       var isAllLetters = true;
       var str = '';
       var children = b.children();
@@ -709,10 +602,13 @@ LatexCmds.operatorname = class extends MathCommand {
         }
         return undefined;
       });
-      if (isAllLetters && str === 'ans') {
-        return AnsBuilder();
+      // A \operatorname{...} of plain letters becomes a single atomic operator
+      // symbol, identical to typing the letters or using the \name macro. This
+      // also covers \operatorname{ans}.
+      if (isAllLetters && str.length > 0) {
+        return new OperatorName(str);
       }
-      // In cases other than `ans`, just return the children directly
+      // Anything else (non-letter content) falls back to the parsed children.
       return children;
     });
   }
