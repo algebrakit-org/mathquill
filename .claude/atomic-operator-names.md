@@ -11,22 +11,22 @@ Replace MathQuill's old "auto-un-italicize" handling of operator names (`sin`,
 
 - An operator name is **always one atomic node** (`OperatorName`), regardless of
   how it entered the field — typed, parsed from `\sin`, or parsed from
-  `\operatorname{…}`. There is no longer any concept of an un-italicized *run of
-  letters*.
+  `\operatorname{…}`. There is no longer any concept of an un-italicized _run of
+  letters_.
 - The node is **fully atomic**: the caret cannot enter it, arrow keys step over
   the whole word, and a single backspace deletes it whole.
 - The legacy auto-un-italicize machinery is **removed entirely**.
 
 ## Decisions (as shipped)
 
-| Question | Decision |
-| --- | --- |
-| Cursor/selection treatment | **Fully atomic** — caret cannot enter it; arrow keys step over the whole word; backspace deletes it whole (no revert). |
-| LaTeX serialization | **Keep the `\sin` vs `\operatorname{}` split** — built-in names emit `\sin `, nonstandard names emit `\operatorname{hcf}`. Preserves round-trip compatibility with stored exercise LaTeX. |
-| Which names are operators | All `DEFAULT_OP_NAMES` are registered as `\name` macros in `LatexCmds`; **typed recognition** is scoped to the names in `MQOptions.autoOperatorNames`. |
-| Recognition trigger | On the **first non-letter keystroke** (e.g. space), via `MathBlock.handleAutoCommands`. Typing letters alone never converts; conversion waits for the trigger. |
-| Matching | **Whole contiguous run only**, never a substring/suffix. |
-| Auto-parenthesizing | Fires **on the recognition path**, gated by membership in **both** `autoParenthesizedFunctions` **and** `autoOperatorNames` (the historical dual gate). `autoParenthesizedFunctions` defaults to empty, so nothing auto-parenthesizes unless configured. |
+| Question                   | Decision                                                                                                                                                                                                                                                 |
+| -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Cursor/selection treatment | **Fully atomic** — caret cannot enter it; arrow keys step over the whole word; backspace deletes it whole (no revert).                                                                                                                                   |
+| LaTeX serialization        | **Keep the `\sin` vs `\operatorname{}` split** — built-in names emit `\sin `, nonstandard names emit `\operatorname{hcf}`. Preserves round-trip compatibility with stored exercise LaTeX.                                                                |
+| Which names are operators  | All `DEFAULT_OP_NAMES` are registered as `\name` macros in `LatexCmds`; **typed recognition** is scoped to the names in `MQOptions.autoOperatorNames`.                                                                                                   |
+| Recognition trigger        | On the **first non-letter keystroke** (e.g. space), via `MathBlock.handleAutoCommands`. Typing letters alone never converts; conversion waits for the trigger.                                                                                           |
+| Matching                   | **Whole contiguous run only**, never a substring/suffix.                                                                                                                                                                                                 |
+| Auto-parenthesizing        | Fires **on the recognition path**, gated by membership in **both** `autoParenthesizedFunctions` **and** `autoOperatorNames` (the historical dual gate). `autoParenthesizedFunctions` defaults to empty, so nothing auto-parenthesizes unless configured. |
 
 ## The node: `OperatorName`
 
@@ -40,8 +40,15 @@ class OperatorName extends MQSymbol {
   constructor(fn?: string) {
     const word = fn || '';
     const isBuiltIn = BuiltInOpNames.hasOwnProperty(word);
-    const ctrlSeq = isBuiltIn ? '\\' + word + ' ' : '\\operatorname{' + word + '}';
-    super(ctrlSeq, h('span', { class: 'mq-operator-name' }, [h.text(word)]), word, word);
+    const ctrlSeq = isBuiltIn
+      ? '\\' + word + ' '
+      : '\\operatorname{' + word + '}';
+    super(
+      ctrlSeq,
+      h('span', { class: 'mq-operator-name' }, [h.text(word)]),
+      word,
+      word
+    );
     this.operatorName = word;
   }
 }
@@ -69,7 +76,7 @@ that one element by `updatePadding()` (≈ L489), called from `finalizeTree`,
 
 - `mq-first` (left gap) unless the left neighbor is absent / `.` / a
   `BinaryOperator` / a `SummationNotation` (see `shouldOmitPadding`, ≈ L508).
-- `mq-last` (right gap) under the same rule, *and* not when followed by a
+- `mq-last` (right gap) under the same rule, _and_ not when followed by a
   `Bracket`.
 - A trailing `SupSub` instead carries `mq-after-operator-name` (unless a bracket
   follows it), matching the old renderer.
@@ -103,7 +110,7 @@ selectors were de-`var`-qualified so they match the `<span>`.)
 - **Trigger**: returns immediately unless `ch` is a non-letter.
 - **Subscript guard**: respects `disableAutoSubstitutionInSubscripts` via
   `shouldIgnoreSubstitutionInSimpleSubscript` on the left node.
-- **Whole-run matching**: scans the contiguous plain-letter run *one past*
+- **Whole-run matching**: scans the contiguous plain-letter run _one past_
   `maxLength`; if the run is longer than any dict entry it bails (so it can never
   match a suffix). This is what stops `afstand` → `tan`, `arcsin` → `arc\sin`
   (with a short custom dict), and `api` → `a\pi`.
@@ -178,8 +185,8 @@ Migrated to the atomic, trigger-based model:
   space; "parenthesizes exactly once" / "does not double parenthesize" exercise
   the `autoParenthesizeOperator` already-parenthesized guard.
 - `test/unit/latex.test.js` — cursor-stepping cases reduced to whole-operator
-  steps (no intra-operator positions). *Selection-bracket placement in the
-  shift cases was re-derived by reasoning; confirm in browser.*
+  steps (no intra-operator positions). _Selection-bracket placement in the
+  shift cases was re-derived by reasoning; confirm in browser._
 - `test/unit/css.test.js` — operator spacing asserted on the single
   `.mq-operator-name` span.
 - `test/unit/autosubscript.test.js` — uses `\sin` (operator) input.
@@ -197,7 +204,7 @@ Migrated to the atomic, trigger-based model:
   whole. Precedent: `To.deleteTowards` (`src/commands/math/basicSymbols.ts`
   ≈ L1013) removes the atomic `→` node and re-creates a `MinusNode`. An operator
   `deleteTowards` would do the same with `Letter`s — fixing `cursor[L]` to the
-  left sibling *before* inserting (otherwise sibling pointers corrupt), and
+  left sibling _before_ inserting (otherwise sibling pointers corrupt), and
   taking care that the recognition pass does not instantly re-collapse the
   letters (it fires only on a non-letter trigger, so a backspace should be safe,
   but verify with a test).
@@ -206,5 +213,5 @@ Migrated to the atomic, trigger-based model:
   carries no aliases. The op-name lists could be enriched to associate a default
   spoken form per name (e.g. `arcsin` → "arc sine").
 - **Edge case**: a `SupSub`'s `mq-after-operator-name` is only re-evaluated when
-  the *operator's* siblings change, not when a bracket is later inserted after
+  the _operator's_ siblings change, not when a bracket is later inserted after
   the supsub. Minor; the old code monkey-patched the supsub to handle it.
