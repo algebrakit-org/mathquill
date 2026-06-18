@@ -359,7 +359,12 @@ class Letter extends Variable {
   // (e.g. \sin or \operatorname{foo}), we keep a token group id so
   // autoUnItalicize() can preserve that boundary inside runs like xsinx.
   explicitOperatorName?: string;
+  // Stable id shared by all letters that came from one explicit operator token.
+  // This lets us keep token boundaries even if surrounding letters are adjacent.
   explicitOperatorGroupId?: number;
+  // Set when the original explicit token was edited and no longer matches its
+  // original operator name. We preserve boundaries, but stop forcing operator formatting.
+  explicitOperatorBroken?: boolean;
 
   constructor(ch: string) {
     super(ch);
@@ -462,7 +467,71 @@ class Letter extends Variable {
   markExplicitOperatorName(operatorName: string, groupId: number) {
     this.explicitOperatorName = operatorName;
     this.explicitOperatorGroupId = groupId;
+    this.explicitOperatorBroken = false;
     return this;
+  }
+
+  // Ensure edited explicit-operator fragments stay visually/structurally separated
+  // from neighboring letters (e.g. x + sn + x after editing x\sin x).
+  private ensureLetterBoundarySpace(left: NodeRef, right: NodeRef) {
+    if (!(left instanceof Letter) || !(right instanceof Letter)) return;
+    if (left[R] !== right || right[L] !== left) return;
+
+    const SpaceKlass = LatexCmds.space as unknown as { new (): MQNode };
+    const space = new SpaceKlass();
+    space.adopt(this.parent, left, right);
+    domFrag(space.html()).insertBefore(right.domFrag());
+  }
+
+  // Custom latex serialization for edited explicit operators: emit escaped
+  // spaces around broken groups so latex() preserves intended token boundaries.
+  latexRecursive(ctx: LatexContext) {
+    const hasBrokenExplicitGroup =
+      this.explicitOperatorBroken &&
+      this.explicitOperatorGroupId !== undefined &&
+      !this.explicitOperatorName;
+    const hasBrokenGroupOnSide = (dir: Direction) => {
+      for (
+        let node: NodeRef = this[dir];
+        node instanceof Letter;
+        node = node[dir]
+      ) {
+        if (
+          node.explicitOperatorBroken &&
+          node.explicitOperatorGroupId !== undefined &&
+          node.explicitOperatorGroupId === this.explicitOperatorGroupId
+        ) {
+          return true;
+        }
+      }
+      return false;
+    };
+
+    this.checkCursorContextOpen(ctx);
+    if (
+      hasBrokenExplicitGroup &&
+      this[L] instanceof Letter &&
+      !hasBrokenGroupOnSide(L)
+    ) {
+      ctx.latex += '\\ ';
+    }
+
+    const saneLatex = (this.ctrlSeq || '').replace(
+      /[^\x00-\x7F\u2030\u00A2\u20AC]+/g,
+      function (ch) {
+        return '\\text{' + ch + '}';
+      }
+    );
+    ctx.latex += saneLatex;
+
+    if (
+      hasBrokenExplicitGroup &&
+      this[R] instanceof Letter &&
+      !hasBrokenGroupOnSide(R)
+    ) {
+      ctx.latex += '\\ ';
+    }
+    this.checkCursorContextClose(ctx);
   }
   private applyOperatorNameFormatting(
     first: Letter,
@@ -635,15 +704,29 @@ class Letter extends Variable {
             letters[groupEnd],
             actualWord
           );
+          for (let j = i; j <= groupEnd; j += 1) {
+            letters[j].explicitOperatorBroken = false;
+          }
           i = groupEnd;
           continue;
         }
 
-        // The explicit operator token got edited in the middle. Drop its
-        // metadata so it falls back to normal whole-word auto-operator logic.
+        // The explicit operator token got edited in the middle. Stop treating
+        // it as a known operator name, but keep group boundaries so spacing and
+        // latex export still separate it from adjacent words.
         for (let j = i; j <= groupEnd; j += 1) {
           letters[j].explicitOperatorName = undefined;
-          letters[j].explicitOperatorGroupId = undefined;
+          letters[j].explicitOperatorBroken = true;
+        }
+
+        const leftNeighbor = i > 0 ? letters[i - 1] : undefined;
+        if (leftNeighbor) {
+          this.ensureLetterBoundarySpace(leftNeighbor, letters[i]);
+        }
+
+        const rightNeighbor = letters[groupEnd + 1];
+        if (rightNeighbor) {
+          this.ensureLetterBoundarySpace(letters[groupEnd], rightNeighbor);
         }
 
         if (segmentStartIndex < 0) {
@@ -661,8 +744,18 @@ class Letter extends Variable {
 
         i = groupEnd;
       } else {
-        letter.explicitOperatorName = undefined;
-        letter.explicitOperatorGroupId = undefined;
+        // Cleanup transient metadata for regular letters, but keep boundary
+        // metadata for broken explicit groups until those letters are edited
+        // into a normal contiguous word again.
+        const isBrokenExplicitGroup =
+          letter.explicitOperatorBroken &&
+          letter.explicitOperatorGroupId !== undefined &&
+          !letter.explicitOperatorName;
+        if (!isBrokenExplicitGroup) {
+          letter.explicitOperatorName = undefined;
+          letter.explicitOperatorGroupId = undefined;
+          letter.explicitOperatorBroken = undefined;
+        }
         if (segmentStartIndex < 0) {
           segmentStartIndex = i;
         }

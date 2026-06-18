@@ -80,13 +80,16 @@ suite('autoOperatorNames', function () {
   test('editing explicit operator drops explicit grouping metadata', function () {
     mq.latex('x\\sin x');
     mq.moveToLeftEnd().keystroke('Right').keystroke('Right').keystroke('Del');
-    assertLatex('deleting inside explicit built-in operator', 'xsnx');
+    assertLatex('deleting inside explicit built-in operator', 'x\\ sn\\ x');
     mq.typedText('i');
-    assertLatex('reinserting char does not force operator formatting', 'xsinx');
+    assertLatex(
+      'reinserting char does not force operator formatting',
+      'x\\ sin\\ x'
+    );
 
     mq.latex('x\\operatorname{hcf}x');
     mq.moveToLeftEnd().keystroke('Right').keystroke('Right').keystroke('Del');
-    assertLatex('deleting inside explicit operatorname', 'xhfx');
+    assertLatex('deleting inside explicit operatorname', 'x\\ hf\\ x');
   });
 
   test('works in \\sum', function () {
