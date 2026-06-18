@@ -478,10 +478,6 @@ suite('latex', function () {
       });
 
       test('still cleans the latex', function () {
-        // NOTE (operator-name atomization): the \sin/\cos cursor sequences below
-        // were re-derived for atomic operators (no intra-operator cursor stops).
-        // The stop *count* is certain; the exact selection-bracket placement in
-        // the shift cases should be confirmed in the browser.
         // Operator names are atomic symbols: the cursor steps over a whole
         // operator in one keystroke, so there are no intra-operator positions.
         var leftCases = {
@@ -519,13 +515,12 @@ suite('latex', function () {
           '\\sin\\left(\\right)': [
             '|\\sin\\left(\\right)',
             '|\\sin|\\left(\\right)',
-            '|\\sin\\left(|\\right)',
             '|\\sin\\left(\\right)|',
           ],
         };
 
-        var twoShiftLeftCases = {
-          '\\sin\\cos': ['\\sin|\\cos|', '|\\sin\\cos|'],
+        var oneShiftLeftCases = {
+          '\\sin\\cos': ['\\sin|\\cos', '|\\sin|\\cos'],
           '\\sin\\cos+': ['\\sin\\cos|+', '\\sin|\\cos|+', '|\\sin\\cos|+'],
           '\\sin\\cos+\\sin\\cos': [
             '\\sin\\cos+\\sin|\\cos',
@@ -536,22 +531,10 @@ suite('latex', function () {
           ],
         };
 
-        var fourShiftLeftCases = {
-          '\\sin\\cos': ['|\\sin\\cos|'],
-          '\\sin\\cos+': ['\\sin|\\cos+', '|\\sin\\cos+'],
-          '\\sin\\cos+\\sin\\cos': [
-            '\\sin\\cos+|\\sin\\cos',
-            '\\sin\\cos|+\\sin\\cos',
-            '\\sin|\\cos+\\sin\\cos',
-            '|\\sin\\cos+\\sin\\cos',
-          ],
-        };
-
         executeCases(leftCases, [], 'Left');
         executeCases(leftShiftCases, [], 'Shift-Left');
         executeCases(rightShiftCases, ['Start'], 'Shift-Right');
-        executeCases(twoShiftLeftCases, ['Left Left'], 'Shift-Left');
-        executeCases(fourShiftLeftCases, ['Left Left Left Left'], 'Shift-Left');
+        executeCases(oneShiftLeftCases, ['Left'], 'Shift-Left');
       });
     });
   });

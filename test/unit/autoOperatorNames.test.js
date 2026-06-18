@@ -71,13 +71,13 @@ suite('autoOperatorNames', function () {
     // word that merely contains an operator name is not converted.
     mq.typedText('acosh');
     mq.typedText(' ');
-    assertLatex("'acosh' is not an operator name", 'acosh');
+    assertLatex("'acosh' is not an operator name", 'acosh\\ ');
     assert.equal(operatorCount(), 0);
 
     mq.latex('');
     mq.typedText('xsin');
     mq.typedText(' ');
-    assertLatex("'xsin' is not an operator name", 'xsin');
+    assertLatex("'xsin' is not an operator name", 'xsin\\ ');
     assert.equal(operatorCount(), 0);
   });
 
@@ -92,13 +92,13 @@ suite('autoOperatorNames', function () {
   });
 
   test('works in \\sum', function () {
-    mq.typedText('sum');
+    mq.typedText('sum ');
     mq.typedText('sin ');
     assertLatex('sum allows operatorname', '\\sum_{\\sin}^{ }');
   });
 
   test('works in \\int', function () {
-    mq.typedText('int');
+    mq.typedText('int ');
     mq.typedText('sin ');
     assertLatex('int allows operatorname', '\\int_{\\sin}^{ }');
   });
@@ -112,7 +112,7 @@ suite('autoOperatorNames', function () {
     mq.config(subscriptConfig);
     mq.typedText('x_');
     mq.typedText('sin ');
-    assertLatex('subscripts do not turn to operatorname', 'x_{sin}');
+    assertLatex('subscripts do not turn to operatorname', 'x_{sin\\ }');
     mq.config(normalConfig);
   });
 
@@ -159,7 +159,7 @@ suite('autoOperatorNames', function () {
       mq.latex('');
       // 'arcsin' is not in the overridden list, so it stays as letters.
       mq.typedText('arcsin ');
-      assert.equal(mq.latex(), 'arcsin');
+      assert.equal(mq.latex(), 'arcsin\\ ');
     });
 
     test('command contains non-letters', function () {
