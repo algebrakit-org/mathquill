@@ -546,42 +546,37 @@ class MathBlock extends MathElement {
     if (this.controller) autoOps = this.controller.options.autoOperatorNames;
     return (
       this.foldChildren<string[]>([], function (speechArray, cmd) {
-        if (cmd.isPartOfOperator) {
-          tempOp += cmd.mathspeak();
-        } else {
-          if (tempOp !== '') {
-            if (autoOps._maxLength! > 0) {
-              var x = autoOps[tempOp.toLowerCase()];
-              if (typeof x === 'string') tempOp = x;
-            }
-            speechArray.push(tempOp + ' ');
-            tempOp = '';
+        if (tempOp !== '') {
+          if (autoOps._maxLength! > 0) {
+            var x = autoOps[tempOp.toLowerCase()];
+            if (typeof x === 'string') tempOp = x;
           }
-          // Atomic operator-name symbols carry their own word; apply the
-          // autoOperatorNames speech-friendly alias (e.g. cos -> "cosine") here,
-          // where the configured options are available.
-          if (cmd instanceof OperatorName) {
-            var op = cmd.operatorName;
-            if (autoOps._maxLength! > 0) {
-              var alias = autoOps[op.toLowerCase()];
-              if (typeof alias === 'string') op = alias;
-            }
-            speechArray.push(' ' + op + ' ');
-            return speechArray;
-          }
-          var mathspeakText = cmd.mathspeak();
-          var cmdText = cmd.ctrlSeq;
-          if (
-            isNaN(cmdText as any) && // TODO - revisit this to improve the isNumber() check
-            cmdText !== '.' &&
-            (!cmd.parent ||
-              !cmd.parent.parent ||
-              !cmd.parent.parent.isTextBlock())
-          ) {
-            mathspeakText = ' ' + mathspeakText + ' ';
-          }
-          speechArray.push(mathspeakText);
+          speechArray.push(tempOp + ' ');
+          tempOp = '';
         }
+        // Apply the autoOperatorNames speech-friendly alias (e.g. cos -> "cosine")
+        if (cmd instanceof OperatorName) {
+          var op = cmd.operatorName;
+          if (autoOps._maxLength! > 0) {
+            var alias = autoOps[op.toLowerCase()];
+            if (typeof alias === 'string') op = alias;
+          }
+          speechArray.push(' ' + op + ' ');
+          return speechArray;
+        }
+        var mathspeakText = cmd.mathspeak();
+        var cmdText = cmd.ctrlSeq;
+        if (
+          isNaN(cmdText as any) && // TODO - revisit this to improve the isNumber() check
+          cmdText !== '.' &&
+          (!cmd.parent ||
+            !cmd.parent.parent ||
+            !cmd.parent.parent.isTextBlock())
+        ) {
+          mathspeakText = ' ' + mathspeakText + ' ';
+        }
+        speechArray.push(mathspeakText);
+
         return speechArray;
       })
         .join('')

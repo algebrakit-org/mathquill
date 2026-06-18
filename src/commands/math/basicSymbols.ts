@@ -186,10 +186,8 @@ class Digit extends DigitGroupingChar {
     if (
       cursor.options.autoSubscriptNumerals &&
       cursor.parent !== cursorParentParentSub &&
-      ((cursorL instanceof Variable && cursorL.isItalic !== false) ||
-        (cursorL instanceof SupSub &&
-          cursorLL instanceof Variable &&
-          cursorLL.isItalic !== false))
+      (cursorL instanceof Variable ||
+        (cursorL instanceof SupSub && cursorLL instanceof Variable))
     ) {
       new SubscriptCommand().createLeftOf(cursor);
       super.createLeftOf(cursor);
@@ -209,10 +207,8 @@ class Digit extends DigitGroupingChar {
       if (
         cursor.options.autoSubscriptNumerals &&
         cursor.parent !== cursorParentParentSub &&
-        ((cursorL instanceof Variable && cursorL.isItalic !== false) ||
-          (cursor[L] instanceof SupSub &&
-            cursorLL instanceof Variable &&
-            cursorLL.isItalic !== false))
+        (cursorL instanceof Variable ||
+          (cursor[L] instanceof SupSub && cursorLL instanceof Variable))
       ) {
         return 'Subscript ' + super.mathspeak() + ' Baseline';
       }
@@ -222,40 +218,31 @@ class Digit extends DigitGroupingChar {
 }
 
 class Variable extends MQSymbol {
-  isItalic?: boolean;
-
   constructor(chOrCtrlSeq: string, html?: ChildNode) {
     super(chOrCtrlSeq, h('var', {}, [html || h.text(chOrCtrlSeq)]));
   }
   text() {
     var text = this.ctrlSeq || '';
-    if (this.isPartOfOperator) {
-      if (text[0] == '\\') {
-        text = text.slice(1, text.length);
-      } else if (text[text.length - 1] == ' ') {
-        text = text.slice(0, -1);
-      }
-    } else {
-      if (
-        this[L] &&
-        !(this[L] instanceof Variable) &&
-        !(this[L] instanceof BinaryOperator) &&
-        (this[L] as MQNode).ctrlSeq !== '\\ '
-      )
-        text = '*' + text;
-      if (
-        this[R] &&
-        !(this[R] instanceof BinaryOperator) &&
-        !(this[R] instanceof SupSub)
-      )
-        text += '*';
-    }
+
+    if (
+      this[L] &&
+      !(this[L] instanceof Variable) &&
+      !(this[L] instanceof BinaryOperator) &&
+      (this[L] as MQNode).ctrlSeq !== '\\ '
+    )
+      text = '*' + text;
+    if (
+      this[R] &&
+      !(this[R] instanceof BinaryOperator) &&
+      !(this[R] instanceof SupSub)
+    )
+      text += '*';
+
     return text;
   }
   mathspeak() {
     var text = this.ctrlSeq || '';
     if (
-      this.isPartOfOperator ||
       text.length > 1 ||
       (this.parent && this.parent.parent && this.parent.parent.isTextBlock())
     ) {
@@ -356,12 +343,6 @@ class Letter extends Variable {
   constructor(ch: string) {
     super(ch);
     this.letter = ch;
-  }
-  italicize(bool: boolean) {
-    this.isItalic = bool;
-    this.isPartOfOperator = !bool;
-    this.domFrag().toggleClass('mq-operator-name', !bool);
-    return this;
   }
 }
 // The default operator names, written out explicitly so that every macro that
@@ -579,13 +560,6 @@ LatexCmds.f = class extends Letter {
     this.domView = new DOMView(0, () =>
       h('var', { class: 'mq-f' }, [h.text('f')])
     );
-  }
-  italicize(bool: boolean) {
-    // Why is this necesssary? Does someone replace the `f` at some
-    // point?
-    this.domFrag().eachElement((el) => (el.textContent = 'f'));
-    this.domFrag().toggleClass('mq-f', bool);
-    return super.italicize(bool);
   }
 };
 

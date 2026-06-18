@@ -162,8 +162,6 @@ class NodeBase {
   upOutOf?: MQNode | ((cursor: Cursor) => Cursor | undefined);
   downOutOf?: MQNode | ((cursor: Cursor) => Cursor | undefined);
 
-  isPartOfOperator: boolean | undefined;
-
   toString() {
     return '{{ MathQuill Node #' + this.id + ' }}';
   }
