@@ -157,7 +157,7 @@ suite('autoOperatorNames', function () {
       assert.equal(mq.latex(), '\\operatorname{lol}');
 
       mq.latex('');
-      // 'arcsin' is not in the overridden list, so it stays as letters.
+      // Match whole-word only, arcsin isn't defined as auto operator in this test.
       mq.typedText('arcsin ');
       assert.equal(mq.latex(), 'arcsin\\ ');
     });

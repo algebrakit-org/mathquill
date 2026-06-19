@@ -345,21 +345,8 @@ class Letter extends Variable {
     this.letter = ch;
   }
 }
-// The default operator names, written out explicitly so that every macro that
-// MathQuill recognizes is visible in source and registered as a `\name` command
-// (see the LatexCmds registration below) rather than being inferred from a
-// generative loop.
-//
-// BUILT_IN_OP_NAMES are real LaTeX operators (Section 3.17 of the Short Math
-// Guide: http://tinyurl.com/jm9okjc); they serialize as `\sin` etc.
-//
-// NONSTANDARD_OP_NAMES are not real LaTeX commands; they are auto-unitalicized
-// and serialize as `\operatorname{hcf}`, `\operatorname{arsinh}`, etc. Most of
-// the trig entries are the systematic arc-/-h/ar--h/arc--h variants of
-// 'sin cos tan sec cosec csc cotan cot ctg'; 'gcf hcf lcm proj span' are kept
-// for compat with nonstandard LaTeX exported by MathQuill before #247. Note:
-// over/under line/arrow \lim variants like \varlimsup are not supported.
-//
+
+// BUILT_IN_OP_NAMES serialize as `\sin` etc.
 // prettier-ignore
 const BUILT_IN_OP_NAMES = [
   'Pr', 'arccos', 'arcsin', 'arctan', 'arg', 'cos', 'cosh', 'cot', 'coth',
@@ -367,6 +354,10 @@ const BUILT_IN_OP_NAMES = [
   'lg', 'lim', 'liminf', 'limsup', 'ln', 'log', 'max', 'min', 'projlim',
   'sec', 'sin', 'sinh', 'sup', 'tan', 'tanh',
 ];
+
+// NONSTANDARD_OP_NAMES serialize as `\operatorname{hcf}`,
+// `\operatorname{arsinh}`, etc. The list consists of systematic trig variants of the standard
+// operators. Others are kept for compat with nonstandard LaTeX already exported by MathQuill.
 // prettier-ignore
 const NONSTANDARD_OP_NAMES = [
   'arccosec', 'arccosech', 'arccosh', 'arccot', 'arccotan', 'arccotanh',
@@ -375,6 +366,7 @@ const NONSTANDARD_OP_NAMES = [
   'arctgh', 'arsech', 'arsinh', 'artanh', 'cosec', 'cosech', 'cotan', 'cotanh',
   'csch', 'ctg', 'ctgh', 'gcf', 'hcf', 'lcm', 'proj', 'sech', 'span',
 ];
+
 // The full set of operator names (built-in + nonstandard), the source of truth
 // for both autoOperatorNames and the LatexCmds command registration.
 const DEFAULT_OP_NAMES = BUILT_IN_OP_NAMES.concat(NONSTANDARD_OP_NAMES);
@@ -437,11 +429,8 @@ baseOptionProcessors.autoOperatorNames = function (cmds) {
   dict._maxLength = maxLength;
   return dict;
 };
-// A monolithic, atomic operator name (\sin, \cos, \operatorname{gcf}, ...).
-// Unlike the historical implementation, this is a single non-decomposable
-// symbol (like \pi): it renders as one element, deletes in a single backspace,
-// and is never broken back into individual editable letters. Built-in LaTeX
-// operators serialize as `\sin`; nonstandard ones as `\operatorname{name}`.
+
+// Atomic, non-decomposable operator symbol (both built-in and `\operatorname`)
 class OperatorName extends MQSymbol {
   // The bare operator word (e.g. 'sin'), used for text/mathspeak and to let
   // MathBlock.mathspeak() apply the autoOperatorNames speech-friendly alias.
@@ -464,9 +453,8 @@ class OperatorName extends MQSymbol {
     this.operatorName = word;
   }
 
-  // Reproduce the operator-name spacing the old per-letter renderer achieved
-  // with mq-first/mq-last: a 0.2em gap from adjacent content, but not from
-  // punctuation, binary operators, summation notation, or brackets.
+  // Create a 0.2em gap between the operator and adjacent content, except from punctuation, binary
+  // operators, summation notation, or brackets.
   private updatePadding() {
     const left = this[L];
     const right = this[R];
@@ -504,20 +492,10 @@ class OperatorName extends MQSymbol {
   }
 }
 
-// Explicitly register every default operator name (built-in LaTeX ops like
-// \sin as well as nonstandard ones like \gcf) as a `\name` command in
-// LatexCmds, iterating the explicit DEFAULT_OP_NAMES list. Each operator that
-// round-trips as \operatorname{name} therefore also has a \name alias.
-// Registering explicitly (rather than inferring from the user-overridable
-// autoOperatorNames option) keeps the command table independent of that option
-// and lets these names also be used as autoCommands.
 for (var i = 0; i < DEFAULT_OP_NAMES.length; i += 1) {
   (LatexCmds as LatexCmdsAny)[DEFAULT_OP_NAMES[i]] = OperatorName;
 }
 
-// `ans` is not an autoOperatorName, but \operatorname{ans} / the \ans macro are
-// supported as a plain atomic operator symbol (it used to have a bespoke
-// AnsBuilder; OperatorName now covers it).
 (LatexCmds as LatexCmdsAny).ans = OperatorName;
 
 LatexCmds.operatorname = class extends MathCommand {
