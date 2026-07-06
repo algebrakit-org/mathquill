@@ -365,6 +365,7 @@ const NONSTANDARD_OP_NAMES = [
   'arcotanh', 'arcoth', 'arcsch', 'arcsec', 'arcsech', 'arcsinh', 'arctanh',
   'arctgh', 'arsech', 'arsinh', 'artanh', 'cosec', 'cosech', 'cotan', 'cotanh',
   'csch', 'ctg', 'ctgh', 'gcf', 'hcf', 'lcm', 'proj', 'sech', 'span',
+  'bgcos', 'Bgcos', 'bgsin', 'Bgsin', 'bgtan', 'Bgtan',
 ];
 
 // The full set of operator names (built-in + nonstandard), the source of truth
