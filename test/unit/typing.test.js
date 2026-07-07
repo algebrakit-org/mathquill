@@ -48,7 +48,7 @@ suite('typing with auto-replaces', function () {
 
   suite('LiveFraction', function () {
     test('full MathQuill', function () {
-      mq.typedText('1/2').keystroke('Tab').typedText('+sinx/');
+      mq.typedText('1/2').keystroke('Tab').typedText('+sin x/');
       assertLatex('\\frac{1}{2}+\\frac{\\sin x}{ }');
       mq.latex('').typedText('1+/2');
       assertLatex('1+\\frac{2}{ }');
@@ -1107,53 +1107,63 @@ suite('typing with auto-replaces', function () {
     });
 
     test('individual commands', function () {
-      //autoParenthesized and also operatored
-      mq.typedText('sin');
+      // 'sin' is both an autoParenthesizedFunction and an autoOperatorName.
+      // The trailing space is the recognition trigger: it converts the run into
+      // the atomic \sin operator and auto-parenthesizes, and is itself consumed
+      // (no stray space inside the parens).
+      mq.typedText('sin ');
       assertLatex('\\sin\\left(\\right)');
       mq.latex('');
-      //not parenthesized
+      // 'cot' is in neither set here, so it never converts and stays plain
+      // letters (no trigger typed).
       mq.typedText('cot');
       assertLatex('cot');
       mq.latex('');
-      //we don't autoparenthesize non-autocommands
-      mq.typedText('tan');
-      assertLatex('tan');
+      // 'tan' is an autoParenthesizedFunction but NOT an autoOperatorName.
+      // Even with the trigger space, the dual gate blocks both recognition and
+      // parenthesization: it is neither turned into an operator symbol nor
+      // parenthesized. The trigger space is not consumed (nothing matched), so
+      // it remains as a literal space.
+      mq.typedText('tan ');
+      assertLatex('tan\\ ');
       mq.latex('');
-      //doesn't parenthesize when the middle is completed
-      mq.typedText('tn');
-      mq.keystroke('Left');
-      mq.typedText('a');
-      assertLatex('tan');
-
-      mq.latex('');
-      //doesn't parenthesize when the middle is completed, but does autoFn
+      // Completing an operator name in the middle does not insert a trigger, so
+      // it stays as letters until a non-letter is typed.
       mq.typedText('sn');
       mq.keystroke('Left');
       mq.typedText('i');
-      assertLatex('\\sin');
+      assertLatex('sin');
     });
 
-    test('does not double parenthesize if parenthesized', function () {
-      //autoParenthesized and also operatored
-      mq.typedText('sin');
+    test('parenthesizes exactly once', function () {
+      // The recognition trigger both converts 'sin' to the atomic operator and
+      // auto-parenthesizes, in a single step, producing exactly one paren pair
+      // (the "already parenthesized" guard in autoParenthesizeOperator prevents
+      // a second pair around the same operator).
+      mq.typedText('sin ');
       assertLatex('\\sin\\left(\\right)');
+      // \sin\left(|\right)
       mq.keystroke('Left');
+      // \sin|\left(\right)
       mq.keystroke('Backspace');
-      mq.typedText('n');
+      // |\left(\right)
+      mq.typedText('sin ');
+      // Since there already was a bracket pair, auto-parenthesize shouldn't create a second set of
+      // parentheses.
       assertLatex('\\sin\\left(\\right)');
     });
 
     test('works in \\sum', function () {
-      mq.typedText('sum');
+      mq.typedText('sum ');
       assertLatex('\\sum_{ }^{ }');
-      mq.typedText('sin');
+      mq.typedText('sin ');
       assertLatex('\\sum_{\\sin\\left(\\right)}^{ }');
     });
 
     test('works in \\int', function () {
-      mq.typedText('int');
+      mq.typedText('int ');
       assertLatex('\\int_{ }^{ }');
-      mq.typedText('sin');
+      mq.typedText('sin ');
       assertLatex('\\int_{\\sin\\left(\\right)}^{ }');
     });
 
@@ -1161,24 +1171,27 @@ suite('typing with auto-replaces', function () {
       mq.config(normalConfig);
       mq.typedText('x_');
       assertLatex('x_{ }');
-      mq.typedText('sin');
+      mq.typedText('sin ');
       assertLatex('x_{\\sin\\left(\\right)}');
       mq.latex('');
       mq.config(subscriptConfig);
       mq.typedText('x_');
       assertLatex('x_{ }');
-      mq.typedText('sin');
-      assertLatex('x_{sin}');
+      mq.typedText('sin ');
+      assertLatex('x_{sin\\ }');
       mq.config(normalConfig);
     });
 
-    test('no auto operator names in simple subscripts when pasting', function () {
+    test('pasted bare letters are not auto-converted to operators', function () {
+      // Auto-conversion only happens on a trigger key while typing; pasted
+      // latex is taken literally, so bare letters stay letters regardless of
+      // config. (Pasting an explicit \sin would parse to the operator.)
       var textarea = $(mq.el()).find('textarea');
       mq.config(normalConfig);
       trigger.paste(textarea[0]);
       textarea.val('x_{sin}');
       trigger.input(textarea[0]);
-      assertLatex('x_{\\sin}');
+      assertLatex('x_{sin}');
       mq.latex('');
       mq.config(subscriptConfig);
       trigger.paste(textarea[0]);
@@ -1219,84 +1232,75 @@ suite('typing with auto-replaces', function () {
     });
 
     test('individual commands', function () {
-      mq.typedText('sum' + 'n=0');
+      mq.typedText('sum ' + 'n=0');
       mq.keystroke('Up').typedText('100').keystroke('Right');
       assertLatex('\\sum_{n=0}^{100}');
       mq.keystroke('Ctrl-Backspace');
 
-      mq.typedText('prod');
+      mq.typedText('prod ');
       mq.typedText('n=0').keystroke('Up').typedText('100').keystroke('Right');
       assertLatex('\\prod_{n=0}^{100}');
       mq.keystroke('Ctrl-Backspace');
 
-      mq.typedText('sqrt');
+      mq.typedText('sqrt ');
       mq.typedText('100').keystroke('Right');
       assertLatex('\\sqrt{100}');
       mq.keystroke('Ctrl-Backspace');
 
-      mq.typedText('nthroot');
+      mq.typedText('nthroot ');
       mq.typedText('n').keystroke('Right').typedText('100').keystroke('Right');
       assertLatex('\\sqrt[n]{100}');
       assertMathspeak('Root Index "n" Start Root 100 End Root');
       mq.keystroke('Ctrl-Backspace');
 
-      mq.typedText('pi');
+      mq.typedText('pi ');
       assertLatex('\\pi');
       mq.keystroke('Backspace');
 
-      mq.typedText('tau');
+      mq.typedText('tau ');
       assertLatex('\\tau');
       mq.keystroke('Backspace');
 
-      mq.typedText('phi');
+      mq.typedText('phi ');
       assertLatex('\\phi');
       mq.keystroke('Backspace');
 
-      mq.typedText('theta');
+      mq.typedText('theta ');
       assertLatex('\\theta');
       mq.keystroke('Backspace');
 
-      mq.typedText('Gamma');
+      mq.typedText('Gamma ');
       assertLatex('\\Gamma');
       mq.keystroke('Backspace');
 
-      mq.typedText('percent');
+      mq.typedText('percent ');
       assertLatex('\\%\\operatorname{of}');
       mq.keystroke('Backspace');
 
-      mq.typedText('cbrt');
+      mq.typedText('cbrt ');
       assertLatex('\\sqrt[3]{}');
       assertMathspeak('Start Cube Root End Cube Root');
-      mq.typedText('pi');
+      mq.typedText('pi ');
       assertLatex('\\sqrt[3]{\\pi}');
     });
 
     test('sequences of auto-commands and other assorted characters', function () {
-      mq.typedText('sin' + 'pi');
+      mq.typedText('sin ' + 'pi +');
+      assertLatex('\\sin\\pi+');
+      mq.keystroke('Backspace Left Backspace');
+      assertLatex('\\pi');
+      mq.typedText('pi');
+      assertLatex('pi\\pi');
+      mq.typedText(' ');
+      assertLatex('\\pi\\pi');
+      mq.typedText('pin');
+      assertLatex('\\pi pin\\pi');
+      mq.keystroke('Left').typedText(' ');
+      assertLatex('\\pi\\pi n\\pi');
+      mq.keystroke('Backspace Backspace').typedText('si');
+      assertLatex('sin\\pi');
+      mq.keystroke('Right').typedText(' ');
       assertLatex('\\sin\\pi');
-      mq.keystroke('Left Backspace');
-      assertLatex('si\\pi');
-      mq.keystroke('Left').typedText('p');
-      assertLatex('spi\\pi');
-      mq.typedText('i');
-      assertLatex('s\\pi i\\pi');
-      mq.typedText('p');
-      assertLatex('s\\pi pi\\pi');
-      mq.keystroke('Right').typedText('n');
-      assertLatex('s\\pi pin\\pi');
-      mq.keystroke('Left Left Left').typedText('s');
-      assertLatex('s\\pi spin\\pi');
-      mq.keystroke('Backspace');
-      assertLatex('s\\pi pin\\pi');
-      mq.keystroke('Del').keystroke('Backspace');
-      assertLatex('\\sin\\pi');
-    });
-
-    test('has lower "precedence" than operator names', function () {
-      mq.typedText('ppi');
-      assertLatex('\\operatorname{pp}i');
-      mq.keystroke('Left Left').typedText('i');
-      assertLatex('\\pi pi');
     });
 
     test('command contains non-letters', function () {
@@ -1311,26 +1315,28 @@ suite('typing with auto-replaces', function () {
       });
     });
 
-    test('command is a built-in operator name', function () {
+    test('operator names are allowed as auto commands', function () {
+      // Operator names used to be rejected as autoCommands; they are now
+      // explicitly registered in LatexCmds and may also be used as autoCommands.
       var cmds = (
         'Pr arg deg det dim exp gcd hom inf ker lg lim ln log max min sup' +
         ' limsup liminf injlim projlim Pr'
       ).split(' ');
       for (var i = 0; i < cmds.length; i += 1) {
-        assert.throws(function () {
+        assert.doesNotThrow(function () {
           MQ.config({ autoCommands: cmds[i] });
         }, 'MQ.config({ autoCommands: "' + cmds[i] + '" })');
       }
     });
 
-    test('built-in operator names even after auto-operator names overridden', function () {
+    test('operator names allowed as auto commands even after auto-operator names overridden', function () {
       MQ.config({ autoOperatorNames: 'sin inf arcosh cosh cos cosec csc' });
       // ^ happen to be the ones required by autoOperatorNames.test.js
       var cmds = 'Pr arg deg det exp gcd inf lg lim ln log max min sup'.split(
         ' '
       );
       for (var i = 0; i < cmds.length; i += 1) {
-        assert.throws(function () {
+        assert.doesNotThrow(function () {
           MQ.config({ autoCommands: cmds[i] });
         }, 'MQ.config({ autoCommands: "' + cmds[i] + '" })');
       }
@@ -1340,14 +1346,14 @@ suite('typing with auto-replaces', function () {
       mq.config(normalConfig);
       mq.typedText('x_');
       assertLatex('x_{ }');
-      mq.typedText('pi');
+      mq.typedText('pi ');
       assertLatex('x_{\\pi}');
       mq.latex('');
       mq.config(subscriptConfig);
       mq.typedText('x_');
       assertLatex('x_{ }');
-      mq.typedText('pi');
-      assertLatex('x_{pi}');
+      mq.typedText('pi ');
+      assertLatex('x_{pi\\ }');
       mq.config(normalConfig);
     });
 

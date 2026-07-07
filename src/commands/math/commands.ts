@@ -1236,14 +1236,6 @@ const MixedFraction = (LatexCmds.MixedFraction = class extends Fraction {
   }
 });
 
-const AnsBuilder = () =>
-  new MQSymbol(
-    '\\operatorname{ans}',
-    h('span', { class: 'mq-ans' }, [h.text('ans')]),
-    'ans'
-  );
-LatexCmds.ans = AnsBuilder;
-
 const PercentOfBuilder = () =>
   new MQSymbol(
     '\\%\\operatorname{of}',

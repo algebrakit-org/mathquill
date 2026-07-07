@@ -135,19 +135,27 @@ suite('CSS', function () {
   test('operator name spacing e.g. sin x', function () {
     var mq = MQ.MathField($('<span></span>').appendTo(mock)[0]);
 
-    mq.typedText('sin');
-    var n = $('#mock var.mq-operator-name:last');
-    assert.equal(n.text(), 'n');
-    assert.ok(!n.is('.mq-last'));
+    // An operator name is a single atomic element. Parse one in directly so
+    // we can exercise its neighbor-aware padding without depending on the typing
+    // trigger.
+    mq.latex('\\sin');
+    var op = $('#mock .mq-operator-name');
+    assert.equal(op.length, 1, 'one operator-name element');
+    assert.equal(op.text(), 'sin');
+    // Nothing to the right, so no right padding.
+    assert.ok(!op.is('.mq-last'));
 
-    mq.typedText('x');
-    assert.ok(n.is('.mq-last'));
+    // A following variable gets a gap (mq-last on the operator).
+    mq.keystroke('End').typedText('x');
+    assert.ok(op.is('.mq-last'));
 
+    // A following bracket: no gap.
     mq.keystroke('Left').typedText('(');
-    assert.ok(!n.is('.mq-last'));
+    assert.ok(!op.is('.mq-last'));
 
+    // A following sup/subscript carries the gap on the supsub instead.
     mq.keystroke('Backspace').typedText('^');
-    assert.ok(!n.is('.mq-last'));
+    assert.ok(!op.is('.mq-last'));
     var supsub = $('#mock .mq-supsub');
     assert.ok(supsub.is('.mq-after-operator-name'));
 

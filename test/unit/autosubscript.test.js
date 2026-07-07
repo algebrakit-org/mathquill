@@ -19,7 +19,7 @@ suite('autoSubscript', function () {
   });
 
   test('do not autosubscript functions', function () {
-    mq.latex('sin');
+    mq.latex('\\sin');
     mq.typedText('2');
     assert.equal(mq.latex(), '\\sin2');
     mq.typedText('3');
@@ -35,7 +35,7 @@ suite('autoSubscript', function () {
   });
 
   test('do not autosubscript exponentiated functions', function () {
-    mq.latex('sin^{2}');
+    mq.latex('\\sin^{2}');
     mq.typedText('2');
     assert.equal(mq.latex(), '\\sin^{2}2');
     mq.typedText('3');
@@ -43,7 +43,7 @@ suite('autoSubscript', function () {
   });
 
   test('do not autosubscript subscripted functions', function () {
-    mq.latex('sin_{10}');
+    mq.latex('\\sin_{10}');
     mq.typedText('2');
     assert.equal(mq.latex(), '\\sin_{10}2');
   });

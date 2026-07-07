@@ -478,22 +478,14 @@ suite('latex', function () {
       });
 
       test('still cleans the latex', function () {
+        // Operator names are atomic symbols: the cursor steps over a whole
+        // operator in one keystroke, so there are no intra-operator positions.
         var leftCases = {
-          '\\sin\\cos': [
-            '\\sin\\cos|',
-            '\\sin\\co|s',
-            '\\sin\\c|os',
-            '\\sin|\\cos',
-            '\\si|n\\cos',
-            '\\s|in\\cos',
-            '|\\sin\\cos',
-          ],
+          '\\sin\\cos': ['\\sin\\cos|', '\\sin|\\cos', '|\\sin\\cos'],
           '\\sin\\left(\\right)': [
             '\\sin\\left(\\right)|',
             '\\sin\\left(|\\right)',
             '\\sin|\\left(\\right)',
-            '\\si|n\\left(\\right)',
-            '\\s|in\\left(\\right)',
             '|\\sin\\left(\\right)',
           ],
           '\\sum _{n=0}^{100}': [
@@ -514,8 +506,6 @@ suite('latex', function () {
           '\\sin\\left(\\right)': [
             '\\sin\\left(\\right)|',
             '\\sin|\\left(\\right)|',
-            '\\si|n\\left(\\right)|',
-            '\\s|in\\left(\\right)|',
             '|\\sin\\left(\\right)|',
           ],
           '\\sum _{n=0}^{100}': ['\\sum_{n=0}^{100}|', '|\\sum_{n=0}^{100}|'],
@@ -524,67 +514,27 @@ suite('latex', function () {
         var rightShiftCases = {
           '\\sin\\left(\\right)': [
             '|\\sin\\left(\\right)',
-            '|\\s|in\\left(\\right)',
-            '|\\si|n\\left(\\right)',
             '|\\sin|\\left(\\right)',
             '|\\sin\\left(\\right)|',
           ],
         };
 
-        var twoShiftLeftCases = {
-          '\\sin\\cos': [
-            '\\sin\\c|os',
-            '\\sin|\\c|os',
-            '\\si|n\\c|os',
-            '\\s|in\\c|os',
-            '|\\sin\\c|os',
-          ],
-          '\\sin\\cos+': [
-            '\\sin\\co|s+',
-            '\\sin\\c|o|s+',
-            '\\sin|\\co|s+',
-            '\\si|n\\co|s+',
-            '\\s|in\\co|s+',
-            '|\\sin\\co|s+',
-          ],
+        var oneShiftLeftCases = {
+          '\\sin\\cos': ['\\sin|\\cos', '|\\sin|\\cos'],
+          '\\sin\\cos+': ['\\sin\\cos|+', '\\sin|\\cos|+', '|\\sin\\cos|+'],
           '\\sin\\cos+\\sin\\cos': [
-            '\\sin\\cos+\\sin\\c|os',
-            '\\sin\\cos+\\sin|\\c|os',
-            '\\sin\\cos+\\si|n\\c|os',
-            '\\sin\\cos+\\s|in\\c|os',
-            '\\sin\\cos+|\\sin\\c|os',
-            '\\sin\\cos|+\\sin\\c|os',
-            '\\sin\\co|s+\\sin\\c|os',
-          ],
-        };
-
-        var fourShiftLeftCases = {
-          '\\sin\\cos': ['\\si|n\\cos', '\\s|i|n\\cos', '|\\si|n\\cos'],
-          '\\sin\\cos+': [
-            '\\sin|\\cos+',
-            '\\si|n|\\cos+',
-            '\\s|in|\\cos+',
-            '|\\sin|\\cos+',
-          ],
-          '\\sin\\cos+\\sin\\cos': [
-            '\\sin\\cos+\\si|n\\cos',
-            '\\sin\\cos+\\s|i|n\\cos',
-            '\\sin\\cos+|\\si|n\\cos',
-            '\\sin\\cos|+\\si|n\\cos',
-            '\\sin\\co|s+\\si|n\\cos',
-            '\\sin\\c|os+\\si|n\\cos',
-            '\\sin|\\cos+\\si|n\\cos',
-            '\\si|n\\cos+\\si|n\\cos',
-            '\\s|in\\cos+\\si|n\\cos',
-            '|\\sin\\cos+\\si|n\\cos',
+            '\\sin\\cos+\\sin|\\cos',
+            '\\sin\\cos+|\\sin|\\cos',
+            '\\sin\\cos|+\\sin|\\cos',
+            '\\sin|\\cos+\\sin|\\cos',
+            '|\\sin\\cos+\\sin|\\cos',
           ],
         };
 
         executeCases(leftCases, [], 'Left');
         executeCases(leftShiftCases, [], 'Shift-Left');
         executeCases(rightShiftCases, ['Start'], 'Shift-Right');
-        executeCases(twoShiftLeftCases, ['Left Left'], 'Shift-Left');
-        executeCases(fourShiftLeftCases, ['Left Left Left Left'], 'Shift-Left');
+        executeCases(oneShiftLeftCases, ['Left'], 'Shift-Left');
       });
     });
   });
