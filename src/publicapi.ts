@@ -395,16 +395,11 @@ function getInterface(v: number): MathQuill.v3.API | MathQuill.v1.API {
       const ctrlr = this.__controller;
       // The textarea drives the blur path (hiding the cursor and stopping its blink) only via a native
       // blur event. If focus isn't actually inside this field that event never fires, so a programmatic
-      // blur() would silently leave the cursor blinking. Detect that case and run the blur path
-      // directly; when the field genuinely has focus we let the native event handle it as before.
-      // containerHasFocus() reads activeElement off the nearest Document/ShadowRoot, so this is correct
-      // for fields rendered inside a shadow tree (where document.activeElement would report the host).
-      const hadFocus = ctrlr.containerHasFocus();
+      // blur() would silently leave the cursor blinking. Force the cursor state being blurred to prevent
+      // this problem. Might be worthwhile to understand better why MQ seems to miss some blurs.
       ctrlr.getTextareaOrThrow().blur();
-      if (!hadFocus) {
-        const cursor = ctrlr.cursor;
-        cursor.hide().parent.blur(cursor);
-      }
+      const cursor = ctrlr.cursor;
+      cursor.hide().parent.blur(cursor);
       return this;
     }
     write(latex: string) {
